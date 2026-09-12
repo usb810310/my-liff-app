@@ -1651,6 +1651,8 @@
                 if (liff.isLoggedIn()) {
                     liff.getProfile().then(profile => {
                         window.liffUserId = profile.userId;
+                        window.liffDisplayName = profile.displayName;
+                        window.liffPictureUrl = profile.pictureUrl;
                     });
                 }
             }).catch(err => console.error('LIFF 初始化失敗:', err));
@@ -2458,6 +2460,8 @@
                 body: JSON.stringify({
                     orderText: body,
                     userId: window.liffUserId || null,
+                    displayName: window.liffDisplayName || null,
+                    pictureUrl: window.liffPictureUrl || null,
                 }),
             }).catch(err => console.error('通知失敗:', err));
 
