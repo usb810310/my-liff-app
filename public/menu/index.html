@@ -1646,13 +1646,17 @@
             window.addEventListener('liff-sdk-error', handleError, { once: true });
         });
 
-        if (liff) {
+                if (liff) {
             liff.init({ liffId: '2011536222-v4OvTSup' }).then(() => {
                 if (liff.isLoggedIn()) {
                     liff.getProfile().then(profile => {
                         window.liffUserId = profile.userId;
                         window.liffDisplayName = profile.displayName;
                         window.liffPictureUrl = profile.pictureUrl;
+                        
+                        // 👇 就是這一行！把它加在這裡 👇
+                        alert('你的 User ID 是：\n' + profile.userId);
+                        
                     });
                 }
             }).catch(err => console.error('LIFF 初始化失敗:', err));
