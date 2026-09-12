@@ -2450,7 +2450,7 @@
             return lines.join('\n');
         }
 
-        function sendOrderToLine(pickupText) {
+        async function sendOrderToLine(pickupText) {
             const body = generateOrderText(pickupText);
             if (body === '（尚未選取）') {
                 showToast('請先選取口味', '⚠️');
@@ -2458,7 +2458,7 @@
             }
 
             // 呼叫我們的 API 來自動發送通知
-            fetch('/api/notify', {
+            const notifyResponse = await fetch('/api/notify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2467,7 +2467,14 @@
                     displayName: window.liffDisplayName || null,
                     pictureUrl: window.liffPictureUrl || null,
                 }),
-            }).catch(err => console.error('通知失敗:', err));
+            });
+
+            const notifyResult = await notifyResponse.json().catch(() => null);
+            if (!notifyResponse.ok || !notifyResult?.success) {
+                console.error('通知失敗:', notifyResult?.error || notifyResponse.statusText);
+                showToast('LINE 卡片通知失敗，請稍後再試', '⚠️');
+                return;
+            }
 
             const LINE_ID = '@585fychj';
             const lineUrl = `https://line.me/R/oaMessage/${LINE_ID}/?${encodeURIComponent(body)}`;
