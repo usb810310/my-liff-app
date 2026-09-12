@@ -1,0 +1,2671 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OMG!Gelato 菜單</title>
+    <script type="importmap">
+        {
+            "imports": {
+                "firebase/app": "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js",
+                "firebase/database": "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js"
+            }
+        }
+    </script>
+    <script>
+        (function() {
+            const stored = localStorage.getItem('omg-theme') || 'light';
+            if (stored === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+            document.addEventListener('DOMContentLoaded', function() {
+                const btn = document.getElementById('themeToggle');
+                const knob = document.getElementById('toggleKnob');
+                const label = document.getElementById('themeLabel');
+                if (!btn) return;
+
+                function setTheme(theme) {
+                    const html = document.documentElement;
+                    if (theme === 'dark') {
+                        html.setAttribute('data-theme', 'dark');
+                        if (knob) knob.textContent = '☀️';
+                        if (label) label.textContent = '白主題';
+                        localStorage.setItem('omg-theme', 'dark');
+                    } else {
+                        html.removeAttribute('data-theme');
+                        if (knob) knob.textContent = '🌙';
+                        if (label) label.textContent = '黑主題';
+                        localStorage.setItem('omg-theme', 'light');
+                    }
+                }
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const current = document.documentElement.getAttribute('data-theme');
+                    setTheme(current === 'dark' ? 'light' : 'dark');
+                });
+                const initTheme = document.documentElement.getAttribute('data-theme');
+                if (label) label.textContent = initTheme === 'dark' ? '白主題' : '黑主題';
+            });
+        })();
+    </script>
+    <style>
+        :root {
+            --bg-body: #f5f2ef;
+            --bg-card: #ffffff;
+            --bg-card-hover: #faf8f6;
+            --bg-sold: #f1eeea;
+            --bg-sync: #eaefe8;
+            --text-primary: #2c241e;
+            --text-secondary: #8f8076;
+            --text-muted: #b3a69c;
+            --text-sync: #5a7a5a;
+            --text-footer: #ccc2b8;
+            --border-light: #e5ddd6;
+            --border-hover: #d0c4ba;
+            --border-sold: #ddd5ce;
+            --border-sync: rgba(90, 122, 90, 0.2);
+            --shadow-card: 0 2px 12px rgba(44, 36, 30, 0.06);
+            --shadow-hover: 0 4px 16px rgba(44, 36, 30, 0.08);
+            --shadow-item: 0 1px 4px rgba(44, 36, 30, 0.04);
+            --shadow-logo: 0 8px 28px rgba(44, 36, 30, 0.12);
+            --accent: #b09888;
+            --accent-light: #d5c8be;
+            --gradient-primary: linear-gradient(90deg, #d5c8be, #e8ddd2);
+            --divider-color: #d5c8be;
+            --scroll-track: #e5ddd6;
+            --scroll-fill: linear-gradient(90deg, #d5c8be, #e8ddd2);
+            --icon-border: #e5ddd6;
+            --sold-tag-bg: rgba(255, 255, 255, 0.75);
+            --sold-tag-border: #ddd5ce;
+            --placeholder-icon: #d5c8be;
+            --logo-glow: 0 0 0 4px rgba(176, 152, 136, 0.08);
+            --pending-color: #d4a373;
+            --mode-active-bg: #d5c8be;
+            --mode-inactive-bg: transparent;
+            --mode-active-text: #2c241e;
+            --mode-inactive-text: #8f8076;
+            --overlay-bg: rgba(0, 0, 0, 0.5);
+            --summary-divider: #e5ddd6;
+            --summary-total-bg: #f5f2ef;
+            --mode-label-color: var(--text-secondary);
+            --pending-badge-bg: #fef3e8;
+            --pending-badge-border: #f0d5c0;
+            --modal-max-width: 420px;
+            --chip-bg: var(--bg-card);
+            --chip-border: var(--border-light);
+            --chip-selected-bg: var(--accent-light);
+            --chip-selected-border: var(--accent);
+            --chip-hover-bg: var(--bg-card-hover);
+            --control-bg: var(--bg-card);
+            --control-border: var(--border-light);
+            --control-divider: var(--border-light);
+            --pickup-time-bg: var(--bg-card);
+            --pickup-time-border: var(--border-light);
+            --pickup-option-hover: var(--bg-card-hover);
+            --slot-bg: var(--bg-card);
+            --slot-border: var(--border-light);
+            --slot-selected: var(--accent);
+            --slot-disabled: var(--bg-sold);
+            --slot-disabled-text: var(--text-muted);
+            --slot-hover: var(--bg-card-hover);
+            --panel-status-bg: var(--bg-sold);
+            --panel-status-border: var(--border-light);
+        }
+        [data-theme="dark"] {
+            --bg-body: #1e1b18;
+            --bg-card: #2b2724;
+            --bg-card-hover: #35302c;
+            --bg-sold: #25211e;
+            --bg-sync: #1e2a1e;
+            --text-primary: #ede7e0;
+            --text-secondary: #b8ada4;
+            --text-muted: #9a8e84;
+            --text-sync: #8fad8a;
+            --text-footer: #5a4f48;
+            --border-light: #3d3530;
+            --border-hover: #5a4f48;
+            --border-sold: #3d3530;
+            --border-sync: rgba(143, 173, 138, 0.25);
+            --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.4);
+            --shadow-item: 0 1px 4px rgba(0, 0, 0, 0.25);
+            --shadow-logo: 0 8px 32px rgba(0, 0, 0, 0.5);
+            --accent: #c4b0a4;
+            --accent-light: #e0d2c8;
+            --gradient-primary: linear-gradient(90deg, #a08878, #c4b0a4);
+            --divider-color: #a08878;
+            --scroll-track: #3d3530;
+            --scroll-fill: linear-gradient(90deg, #a08878, #c4b0a4);
+            --icon-border: #3d3530;
+            --sold-tag-bg: rgba(43, 39, 36, 0.85);
+            --sold-tag-border: #3d3530;
+            --placeholder-icon: #5a4f48;
+            --logo-glow: 0 0 0 4px rgba(196, 176, 164, 0.15);
+            --pending-color: #d4a373;
+            --mode-active-bg: #3d3530;
+            --mode-inactive-bg: transparent;
+            --mode-active-text: #ede7e0;
+            --mode-inactive-text: #b8ada4;
+            --overlay-bg: rgba(0, 0, 0, 0.7);
+            --summary-divider: #3d3530;
+            --summary-total-bg: #25211e;
+            --mode-label-color: #b8ada4;
+            --pending-badge-bg: #3a2e26;
+            --pending-badge-border: #5a4a3a;
+            --chip-bg: #2b2724;
+            --chip-border: #3d3530;
+            --chip-selected-bg: #3d3530;
+            --chip-selected-border: #c4b0a4;
+            --chip-hover-bg: #35302c;
+            --control-bg: #2b2724;
+            --control-border: #3d3530;
+            --control-divider: #3d3530;
+            --pickup-time-bg: #2b2724;
+            --pickup-time-border: #3d3530;
+            --pickup-option-hover: #35302c;
+            --slot-bg: #2b2724;
+            --slot-border: #3d3530;
+            --slot-selected: #c4b0a4;
+            --slot-disabled: #25211e;
+            --slot-disabled-text: #5a4f48;
+            --slot-hover: #35302c;
+            --panel-status-bg: #25211e;
+            --panel-status-border: #3d3530;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, sans-serif;
+        }
+        body {
+            background: var(--bg-body);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px 16px 50px;
+            transition: background 0.35s ease;
+            color: var(--text-primary);
+        }
+        .container {
+            max-width: 500px;
+            width: 100%;
+        }
+
+        /* ===== 品牌 ===== */
+        .brand {
+            text-align: center;
+            padding: 10px 0 14px;
+            position: relative;
+        }
+        .brand-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .brand-logo-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 4px;
+        }
+        .brand-logo {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 16px rgba(44, 36, 30, 0.08));
+            transition: transform 0.4s ease;
+        }
+        .brand-logo:hover {
+            transform: scale(1.05) rotate(-2deg);
+        }
+        .brand-title {
+            font-size: 34px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: 2px;
+            line-height: 1.1;
+        }
+        .brand-title span {
+            color: var(--accent);
+            font-weight: 700;
+        }
+        
+        /* ===== 三色線自動寬度容器 ===== */
+        .brand-title-box {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* ===== 三色線（寬度 100%） ===== */
+        .brand-divider {
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #009246 33.33%, #ffffff 33.33%, #ffffff 66.66%, #ce2b37 66.66%);
+            margin: 4px auto 16px;
+            border-radius: 4px;
+            box-shadow: 0 0 12px rgba(206, 43, 55, 0.15), 0 0 12px rgba(0, 146, 70, 0.15);
+        }
+
+        /* ===== 控制欄 (固定導航欄) ===== */
+        .control-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            background: var(--control-bg);
+            border-radius: 40px;
+            border: 1px solid var(--control-border);
+            box-shadow: var(--shadow-item);
+            padding: 4px 6px;
+            margin: 10px auto 16px;
+            width: fit-content;
+            max-width: 100%;
+            transition: background 0.35s ease, border-color 0.35s ease;
+            position: sticky;
+            top: 10px;
+            z-index: 999;
+        }
+        .control-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            white-space: nowrap;
+            position: relative;
+        }
+        .control-item .icon {
+            font-size: 14px;
+            line-height: 1;
+        }
+        .control-item .label {
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        .control-item:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+        .control-item:active {
+            transform: scale(0.96);
+        }
+        .control-divider {
+            width: 1px;
+            height: 24px;
+            background: var(--control-divider);
+            flex-shrink: 0;
+            opacity: 0.5;
+        }
+        .wish-btn-inline {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .wish-btn-inline:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+        .wish-btn-inline:active {
+            transform: scale(0.96);
+        }
+        .wish-btn-inline .icon {
+            font-size: 14px;
+            line-height: 1;
+        }
+        .wish-btn-inline .label {
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .sync-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-sync);
+            background: transparent;
+            border: none;
+            cursor: default;
+            white-space: nowrap;
+        }
+        .sync-badge .indicator {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #a0b8a8;
+            flex-shrink: 0;
+            transition: background 0.4s ease;
+        }
+        .sync-badge .indicator.online {
+            background: #34a853;
+            box-shadow: 0 0 8px rgba(52, 168, 83, 0.35);
+            animation: pulse-dot 1.8s ease-in-out infinite;
+        }
+        .sync-badge .indicator.connecting {
+            background: #fbbc04;
+            animation: pulse-dot 1s ease-in-out infinite;
+        }
+        .sync-badge .indicator.offline {
+            background: #ea4335;
+        }
+        .sync-badge .sync-label {
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        @keyframes pulse-dot {
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
+        }
+        .theme-toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .theme-toggle-btn:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+        .theme-toggle-btn:active {
+            transform: scale(0.96);
+        }
+        .theme-toggle-btn .icon {
+            font-size: 14px;
+            line-height: 1;
+        }
+        .theme-toggle-btn .label {
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        /* ===== 品牌下方標題 ===== */
+        .brand-sub-title {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 2px;
+            padding: 0 8px;
+        }
+
+        /* ===== ✨開始訂購 & 模擬試用✨口味 ===== */
+        .today-section {
+            position: relative;
+            margin-bottom: 20px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 18px 14px 16px;
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border-light);
+        }
+        .today-section .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .today-section .section-label {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .scroll-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+        .scroll-indicator .track {
+            flex: 1;
+            height: 3px;
+            background: var(--scroll-track);
+            border-radius: 10px;
+            overflow: hidden;
+            max-width: 200px;
+        }
+        .scroll-indicator .track .fill {
+            height: 100%;
+            width: 25%;
+            background: var(--scroll-fill);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        .today-scroll-wrapper {
+            position: relative;
+            overflow: hidden;
+            margin-top: 2px;
+        }
+        .today-scroll {
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 4px 0 6px 0;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            cursor: grab;
+        }
+        .today-scroll:active {
+            cursor: grabbing;
+        }
+        .today-scroll::-webkit-scrollbar {
+            height: 0px;
+        }
+        .today-scroll-content {
+            display: flex;
+            gap: 10px;
+            width: max-content;
+        }
+        .today-grid {
+            display: grid;
+            grid-auto-flow: column;
+            grid-template-rows: repeat(2, 1fr);
+            gap: 10px;
+            width: max-content;
+        }
+        .today-card {
+            width: 130px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 14px 10px 12px;
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-item);
+            text-align: center;
+            min-height: 104px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .today-card:hover:not(.sold-out) {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+        .today-card.sold-out {
+            background: var(--bg-sold);
+            border-color: var(--border-sold);
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .today-card.sold-out .today-name {
+            color: var(--text-muted);
+            text-decoration: line-through;
+        }
+        .today-card .sold-tag {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            font-size: 8px;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: var(--sold-tag-bg);
+            padding: 1px 8px;
+            border-radius: 30px;
+            border: 1px solid var(--sold-tag-border);
+            z-index: 2;
+        }
+        .today-card:not(.sold-out) .sold-tag {
+            display: none;
+        }
+        .today-card .today-name {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+        .today-card .today-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .today-card .color-tag {
+            width: 22px;
+            height: 3px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            flex-shrink: 0;
+        }
+        .today-empty {
+            font-size: 13px;
+            color: var(--text-muted);
+            padding: 12px 0;
+            text-align: center;
+        }
+        .finger-swipe {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            font-size: 26px;
+            color: var(--accent);
+            opacity: 0.8;
+            pointer-events: none;
+            animation: fingerMove 1.8s ease-in-out 2;
+            transition: opacity 0.6s ease;
+        }
+        @keyframes fingerMove {
+            0%,
+            100% {
+                transform: translateX(-50%) translateX(-15px);
+                opacity: 0.4;
+            }
+            50% {
+                transform: translateX(-50%) translateX(15px);
+                opacity: 1;
+            }
+        }
+        .finger-swipe.hidden {
+            opacity: 0 !important;
+            animation: none !important;
+        }
+
+        /* ===== 🆕 重新設計的訂單面板 ===== */
+        .order-panel {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 18px 16px 16px;
+            margin: 14px 0 8px;
+            border: 2px solid var(--accent);
+            box-shadow: var(--shadow-card);
+        }
+
+        /* 第一行：標題 */
+        .panel-header {
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 14px;
+            letter-spacing: 0.5px;
+        }
+        .panel-header .arrow {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        /* 第二行：模式按鈕 */
+        .mode-switcher {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .mode-btn {
+            flex: 1;
+            padding: 10px 0;
+            border-radius: 40px;
+            border: 2px solid var(--border-light);
+            background: var(--mode-inactive-bg);
+            color: var(--mode-inactive-text);
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: center;
+            user-select: none;
+        }
+        .mode-btn:hover:not(.active) {
+            background: var(--bg-card-hover);
+            border-color: var(--border-hover);
+        }
+        .mode-btn.active {
+            border-color: var(--accent);
+            background: var(--mode-active-bg);
+            color: var(--mode-active-text);
+            box-shadow: 0 4px 14px rgba(176, 152, 136, 0.25);
+            transform: scale(1.03);
+        }
+        .mode-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* 第三行：目前選定 */
+        .panel-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: var(--panel-status-bg);
+            border-radius: 30px;
+            padding: 6px 18px;
+            margin-bottom: 14px;
+            border: 1px solid var(--panel-status-border);
+            flex-wrap: wrap;
+            min-height: 40px;
+        }
+        .panel-status .status-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .panel-status .status-mode {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .panel-status .pending-badge {
+            display: none;
+            background: var(--pending-badge-bg);
+            border: 1px solid var(--pending-badge-border);
+            border-radius: 30px;
+            padding: 0 14px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--pending-color);
+            line-height: 26px;
+            margin-left: 4px;
+            animation: pendingPulse 1.8s ease-in-out infinite;
+        }
+        .panel-status .pending-badge.show {
+            display: inline-block;
+        }
+
+        @keyframes pendingPulse {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        /* 訂單內容列 */
+        .order-row {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+        .order-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            padding: 6px 0;
+            border-bottom: 1px dashed var(--border-light);
+        }
+        .order-item .label-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 70px;
+            flex-shrink: 0;
+        }
+        .order-item .label-wrap .label-icon {
+            width: 36px;
+            height: 36px;
+            object-fit: contain;
+            border-radius: 6px;
+            background: var(--bg-sold);
+            padding: 2px;
+        }
+        .order-item .label-wrap .label-text {
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 11px;
+            text-align: center;
+        }
+        .order-item .label-wrap .label-price {
+            font-weight: 600;
+            color: var(--accent);
+            font-size: 11px;
+            background: var(--bg-sold);
+            padding: 0 6px;
+            border-radius: 12px;
+            line-height: 16px;
+        }
+        .order-item .content {
+            color: var(--text-primary);
+            flex: 1;
+            font-size: 14px;
+            word-break: break-word;
+        }
+        .order-item .content.empty {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        .pending-hint {
+            display: none !important;
+        }
+
+        /* ===== 明細區 ===== */
+        .summary-section {
+            margin-top: 12px;
+            background: var(--bg-card);
+            border-radius: 18px;
+            padding: 16px 14px 14px;
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-card);
+        }
+        /* 修改：標題置中 */
+        .summary-section .summary-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center; /* 居中 */
+            gap: 8px;
+            margin-bottom: 12px;
+            text-align: center;
+            width: 100%;
+        }
+        
+        /* 修改：將原本的 .badge-count 樣式修改，用於融合在總計旁 */
+        .summary-total .badge-count {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: var(--bg-sold);
+            padding: 2px 10px;
+            border-radius: 30px;
+            line-height: 20px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+        
+        .summary-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 4px;
+            font-size: 14px;
+            color: var(--text-primary);
+            border-bottom: 1px dashed var(--summary-divider);
+        }
+        .summary-item:last-of-type {
+            border-bottom: none;
+        }
+        .summary-item .left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .summary-item .left .emoji {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .summary-item .left .label {
+            font-weight: 500;
+        }
+        .summary-item .left .detail {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-left: 2px;
+        }
+        .summary-item .right {
+            font-weight: 600;
+            color: var(--accent);
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        .summary-item .right .qty {
+            font-weight: 400;
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-right: 4px;
+        }
+        .summary-empty {
+            color: var(--text-muted);
+            font-size: 14px;
+            padding: 14px 0 8px;
+            text-align: center;
+        }
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 2px solid var(--accent);
+            background: var(--summary-total-bg);
+            border-radius: 12px;
+            padding: 10px 12px;
+        }
+        .summary-total .total-label {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+        }
+        .summary-total .total-amount {
+            font-weight: 800;
+            font-size: 20px;
+            color: var(--accent);
+        }
+        .summary-total .total-amount .currency {
+            font-size: 14px;
+            font-weight: 600;
+            margin-right: 2px;
+        }
+        .summary-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+        .summary-actions .action-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 20px;
+            padding: 4px 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            line-height: 28px;
+            transition: all 0.2s ease;
+            flex: 1;
+            text-align: center;
+        }
+        .summary-actions .action-btn:hover {
+            background: var(--bg-card-hover);
+        }
+        .summary-actions .primary-btn {
+            background: #06C755;
+            color: #fff;
+            border: none;
+            box-shadow: 0 2px 8px rgba(6, 199, 85, 0.25);
+            font-weight: 600;
+            flex: 2;
+        }
+        .summary-actions .primary-btn:hover {
+            background: #05b04a;
+            transform: translateY(-1px);
+        }
+        .summary-actions .clear-btn {
+            background: var(--bg-sold);
+            color: var(--text-muted);
+            border-color: var(--border-sold);
+        }
+
+        /* ===== Modal 通用 ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--overlay-bg);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s ease;
+        }
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-box {
+            background: var(--bg-card);
+            border-radius: 28px;
+            padding: 28px 24px 22px;
+            max-width: var(--modal-max-width);
+            width: 100%;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+            transform: translateY(24px) scale(0.96);
+            transition: transform 0.35s cubic-bezier(0.34, 1.2, 0.64, 1);
+        }
+        .modal-overlay.open .modal-box {
+            transform: translateY(0) scale(1);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2px;
+        }
+        .modal-header h3 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+        }
+        .modal-close {
+            background: var(--bg-sold);
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            font-size: 18px;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .modal-close:hover {
+            background: var(--border-light);
+            color: var(--text-primary);
+        }
+        .modal-sub {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin: 4px 0 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .modal-sub strong {
+            color: var(--accent);
+            font-weight: 700;
+        }
+        .modal-sub .count-badge {
+            display: inline-block;
+            background: var(--accent-light);
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 13px;
+            padding: 0 12px;
+            border-radius: 30px;
+            line-height: 24px;
+            margin-left: 4px;
+        }
+
+        /* === 分享盒 chips === */
+        .modal-chip-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 6px 0 10px;
+            max-height: 38vh;
+            overflow-y: auto;
+            padding: 4px 2px 8px;
+            align-content: flex-start;
+        }
+        .modal-chip-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        .modal-chip-list::-webkit-scrollbar-track {
+            background: var(--scroll-track);
+            border-radius: 10px;
+        }
+        .modal-chip-list::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 10px;
+        }
+        .modal-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px 8px 14px;
+            border-radius: 40px;
+            border: 2px solid var(--chip-border);
+            background: var(--chip-bg);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            user-select: none;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+        .modal-chip:hover {
+            background: var(--chip-hover-bg);
+            border-color: var(--border-hover);
+            transform: translateY(-1px);
+        }
+        .modal-chip .chip-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+        .modal-chip .chip-label {
+            line-height: 1.3;
+        }
+        .modal-chip .chip-check {
+            font-size: 16px;
+            color: var(--accent);
+            font-weight: 700;
+            opacity: 0;
+            transform: scale(0.6);
+            transition: all 0.2s ease;
+            margin-left: 2px;
+        }
+        .modal-chip.selected {
+            border-color: var(--chip-selected-border);
+            background: var(--chip-selected-bg);
+            box-shadow: 0 2px 12px rgba(176, 152, 136, 0.2);
+        }
+        .modal-chip.selected .chip-check {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .modal-chip.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: none !important;
+        }
+
+        /* ===== 取餐時間 - 方案 G (半小時分段) ===== */
+        .pickup-date-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .pickup-date-tab {
+            flex: 1;
+            padding: 10px 0;
+            border-radius: 40px;
+            border: 2px solid var(--border-light);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .pickup-date-tab:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-hover);
+        }
+        .pickup-date-tab.active {
+            border-color: var(--accent);
+            background: var(--accent-light);
+            color: var(--text-primary);
+            box-shadow: 0 2px 12px rgba(176, 152, 136, 0.15);
+        }
+
+        .pickup-slot-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin: 8px 0 12px;
+            max-height: 36vh;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .pickup-slot-grid::-webkit-scrollbar {
+            width: 4px;
+        }
+        .pickup-slot-grid::-webkit-scrollbar-track {
+            background: var(--scroll-track);
+            border-radius: 10px;
+        }
+        .pickup-slot-grid::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 10px;
+        }
+
+        .pickup-slot {
+            padding: 12px 0;
+            border-radius: 40px;
+            border: 2px solid var(--slot-border);
+            background: var(--slot-bg);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .pickup-slot:hover:not(.disabled):not(.selected) {
+            background: var(--slot-hover);
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+        .pickup-slot.selected {
+            border-color: var(--slot-selected);
+            background: var(--accent-light);
+            color: var(--text-primary);
+            box-shadow: 0 2px 12px rgba(176, 152, 136, 0.2);
+        }
+        .pickup-slot.disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            pointer-events: none;
+            background: var(--slot-disabled);
+            color: var(--slot-disabled-text);
+            border-color: var(--border-sold);
+            transform: none !important;
+        }
+
+        .pickup-selected-display {
+            text-align: center;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--accent);
+            padding: 8px 0 2px;
+            min-height: 40px;
+            border-top: 1px dashed var(--border-light);
+            margin-top: 4px;
+        }
+        .pickup-selected-display .empty {
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        /* === 許願池 Modal === */
+        .wish-input-wrap {
+            margin: 8px 0 12px;
+        }
+        .wish-input-wrap input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 40px;
+            border: 2px solid var(--border-light);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 15px;
+            outline: none;
+            transition: border 0.2s;
+        }
+        .wish-input-wrap input:focus {
+            border-color: var(--accent);
+        }
+        .wish-hint {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .modal-error {
+            color: #d93025;
+            font-size: 13px;
+            min-height: 22px;
+            margin: 2px 0 6px;
+            font-weight: 500;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding-top: 14px;
+            border-top: 1px solid var(--border-light);
+            margin-top: 2px;
+        }
+        .modal-actions button {
+            padding: 10px 28px;
+            border-radius: 40px;
+            border: none;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .modal-actions button:active {
+            transform: scale(0.96);
+        }
+        .modal-actions .btn-cancel {
+            background: var(--bg-sold);
+            color: var(--text-muted);
+        }
+        .modal-actions .btn-cancel:hover {
+            background: var(--border-light);
+        }
+        .modal-actions .btn-confirm {
+            background: var(--accent);
+            color: #fff;
+            min-width: 100px;
+        }
+        .modal-actions .btn-confirm:hover:not(:disabled) {
+            background: var(--accent-light);
+            color: var(--text-primary);
+        }
+        .modal-actions .btn-confirm:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .floating-toast {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: rgba(30, 30, 30, 0.92);
+            color: #ffffff;
+            padding: 12px 28px;
+            border-radius: 50px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+            font-size: 16px;
+            font-weight: 600;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.35s ease, transform 0.35s ease;
+            pointer-events: none;
+            white-space: nowrap;
+            backdrop-filter: blur(6px);
+        }
+        .floating-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .global-update-time {
+            text-align: right;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin: 4px 0 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 11px;
+            color: var(--text-footer);
+            border-top: 1px solid var(--border-light);
+            padding-top: 16px;
+        }
+
+        @media (max-width:480px) {
+            .brand-logo {
+                width: 68px;
+                height: 68px;
+            }
+            .brand-title {
+                font-size: 28px;
+                letter-spacing: 1.5px;
+            }
+            .control-bar {
+                padding: 3px 4px;
+                border-radius: 30px;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                top: 5px;
+            }
+            .control-item,
+            .sync-badge,
+            .theme-toggle-btn,
+            .wish-btn-inline {
+                padding: 4px 12px;
+                font-size: 11px;
+                flex-shrink: 0;
+            }
+            .control-item .icon,
+            .theme-toggle-btn .icon,
+            .wish-btn-inline .icon {
+                font-size: 12px;
+            }
+            .control-divider {
+                height: 18px;
+                flex-shrink: 0;
+            }
+            .today-card {
+                width: 112px;
+                padding: 12px 8px 10px;
+                min-height: 94px;
+            }
+            .today-card .today-name {
+                font-size: 14px;
+            }
+            .scroll-indicator .track {
+                max-width: 140px;
+            }
+            .order-item .label-wrap {
+                min-width: 56px;
+            }
+            .floating-toast {
+                font-size: 14px;
+                padding: 10px 20px;
+                top: 16px;
+            }
+            .summary-item {
+                font-size: 13px;
+                flex-wrap: wrap;
+            }
+            .summary-item .right {
+                font-size: 13px;
+            }
+            .summary-total .total-amount {
+                font-size: 18px;
+            }
+            .summary-actions .action-btn {
+                flex: 1 1 100%;
+            }
+            .summary-actions .primary-btn {
+                flex: 1 1 100%;
+            }
+            .mode-btn {
+                font-size: 12px;
+                padding: 8px 0;
+            }
+            .panel-status .status-label {
+                font-size: 13px;
+            }
+            .panel-status .status-mode {
+                font-size: 14px;
+            }
+            .pending-badge {
+                font-size: 11px;
+                line-height: 22px;
+                padding: 0 10px;
+            }
+            .modal-box {
+                padding: 20px 16px 18px;
+            }
+            .modal-header h3 {
+                font-size: 19px;
+            }
+            .modal-chip {
+                font-size: 13px;
+                padding: 6px 12px 6px 10px;
+            }
+            .modal-actions button {
+                padding: 8px 20px;
+                font-size: 14px;
+            }
+            .pickup-date-tab {
+                font-size: 13px;
+                padding: 8px 0;
+            }
+            .pickup-slot {
+                font-size: 12px;
+                padding: 10px 0;
+            }
+            .pickup-slot-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 6px;
+            }
+            .panel-header {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="floatingToast" class="floating-toast"><span class="icon">🍨</span><span id="toastMessage">訊息</span></div>
+    <div class="container">
+        <!-- ===== 品牌 ===== -->
+        <div class="brand">
+            <div class="brand-inner">
+                <div class="brand-logo-wrapper">
+                    <img src="https://omg-gelato79.pages.dev/logo1.png" alt="OMG! Gelato" class="brand-logo" id="brandLogo" />
+                </div>
+                
+                <!-- 加入自動寬度容器 -->
+                <div class="brand-title-box">
+                    <h1 class="brand-title" id="brandMainTitle">OMG! <span>Gelato</span></h1>
+                    <div class="brand-divider"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 控制欄 (已移出，作為固定導航欄) ===== -->
+        <div class="control-bar">
+            <a href="/" class="control-item">
+                <span class="icon">🏠</span>
+                <span class="label">首頁</span>
+            </a>
+            <span class="control-divider"></span>
+            <div class="sync-badge" id="syncBadge">
+                <span class="indicator connecting" id="indicatorDot"></span>
+                <span class="sync-label" id="syncText">連線中</span>
+            </div>
+            <button class="wish-btn-inline" id="wishTriggerBtn">
+                <span class="icon">⭐</span>
+                <span class="label">許願池</span>
+            </button>
+            <span class="control-divider"></span>
+            <button class="theme-toggle-btn" id="themeToggle">
+                <span class="icon" id="toggleKnob">🌙</span>
+                <span class="label" id="themeLabel">黑主題</span>
+            </button>
+        </div>
+
+        <div class="brand-sub-title" id="todaySectionTitle">🪧今日口味 & 店內冰櫃🪧</div>
+
+        <!-- ===== ✨開始訂購 & 模擬試用✨口味 ===== -->
+        <div class="today-section" id="todaySection">
+            <div class="section-header">
+                <div class="scroll-indicator"><span class="hint-text"><span class="arrow">店內冰櫃同步顯示網路</span> → 口味左右滑動查看更多<span class="arrow">→</span></span><div class="track"><div class="fill" id="scrollFill"></div></div></div>
+            </div>
+            <div class="today-scroll-wrapper">
+                <div class="finger-swipe" id="fingerSwipe">⬅️👆➡️</div>
+                <div class="today-scroll" id="todayScroll"><div class="today-scroll-content"><div class="today-grid" id="todayGrid"><div class="loading">⏳ 載入中...</div></div></div></div>
+            </div>
+        </div>
+
+        <!-- ===== 🆕 重新設計的訂單面板 ===== -->
+        <div class="brand-sub-title" id="orderSectionTitle">✨開始訂購 &amp; 模擬試用✨</div>
+        <div class="order-panel" id="orderPanel">
+            <!-- 第一行：標題 -->
+            <div class="panel-header">
+                ⬇️ 切換種類 / 口味選擇 ⬆️
+            </div>
+
+            <!-- 第二行：模式按鈕 -->
+            <div class="mode-switcher">
+                <button class="mode-btn active" data-mode="duet" id="modeDuet">🥂 雙重奏</button>
+                <button class="mode-btn" data-mode="cup" id="modeCup">🍦 獨享杯</button>
+                <button class="mode-btn" data-mode="share" id="modeShare">🎁 分享盒</button>
+            </div>
+
+            <!-- 第三行：目前選定 -->
+            <div class="panel-status">
+                <span class="status-label">目前選定：</span>
+                <span class="status-mode" id="currentModeLabel">雙重奏</span>
+                <span class="pending-badge" id="pendingBadge">⏳ 待配對：<span id="pendingBadgeFlavor"></span></span>
+            </div>
+
+            <!-- 訂單內容 -->
+            <div class="order-row">
+                <div class="order-item">
+                    <div class="label-wrap">
+                        <img src="https://omg-gelato79.pages.dev/icon-duet.png" alt="雙重奏" class="label-icon" />
+                        <span class="label-text">雙重奏</span>
+                        <span class="label-price">$120</span>
+                    </div>
+                    <span class="content" id="duetOrderDisplay">尚未選取</span>
+                </div>
+                <div class="order-item">
+                    <div class="label-wrap">
+                        <img src="https://omg-gelato79.pages.dev/icon-cup.png" alt="獨享杯" class="label-icon" />
+                        <span class="label-text">獨享杯</span>
+                        <span class="label-price">$100</span>
+                    </div>
+                    <span class="content" id="cupOrderDisplay">尚未選取</span>
+                </div>
+                <div class="order-item">
+                    <div class="label-wrap">
+                        <img src="https://omg-gelato79.pages.dev/icon-share.png" alt="分享盒" class="label-icon" />
+                        <span class="label-text">分享盒</span>
+                        <span class="label-price">$420</span>
+                    </div>
+                    <span class="content" id="shareOrderDisplay">尚未選取</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 訂單明細 ===== -->
+        <div class="summary-section" id="summarySection">
+            <!-- 修改：標題獨立並置中，移除原本的 0 項徽章 -->
+            
+            <div class="summary-list" id="summaryList">
+                <div class="summary-empty"> 已選商品清單列表 </div>
+            </div>
+            
+            <!-- 修改：將 0 項融合進總計區塊 -->
+            <div class="summary-total">
+                <span class="total-label">💰 總計 <span class="badge-count" id="summaryBadge">0 項</span></span>
+                <span class="total-amount"><span class="currency">$</span><span id="summaryTotalAmount">0</span></span>
+            </div>
+            
+            <div class="summary-actions">
+                <button class="action-btn clear-btn" id="clearAllBtn">清空重選</button>
+                <button class="action-btn primary-btn" id="sendLineBtn">透過LINE傳送訂單</button>
+            </div>
+        </div>
+
+        <div class="global-update-time" id="updateTimeDisplay">口味同步系統更新於 22:50</div>
+        <div class="footer">©2026 OMG!Gelato·口味同步系統供查看,實際以現場供應為準</div>
+    </div>
+
+    <!-- ===== 分享盒 Modal ===== -->
+    <div class="modal-overlay" id="shareModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>選擇分享盒口味</h3>
+                <button class="modal-close" id="modalCloseBtn">✕</button>
+            </div>
+            <div class="modal-sub">
+                📌 請選擇 <strong>2～3 種</strong> 口味
+                <span class="count-badge" id="modalSelectedCount">已選 0 種</span>
+            </div>
+            <div class="modal-chip-list" id="modalChipList"></div>
+            <div class="modal-error" id="modalError"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="modalCancelBtn">取消</button>
+                <button class="btn-confirm" id="modalConfirmBtn" disabled>確認加購</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 取餐時間 Modal ===== -->
+    <div class="modal-overlay" id="pickupModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>🕐 選擇取餐時間</h3>
+                <button class="modal-close" id="pickupModalClose">✕</button>
+            </div>
+            <div class="modal-sub">請選擇取餐日期與時段 (30 分鐘為單位)</div>
+
+            <div class="pickup-date-tabs">
+                <div class="pickup-date-tab active" data-date="today">📅 今天</div>
+                <div class="pickup-date-tab" data-date="tomorrow">📆 明天</div>
+            </div>
+
+            <div class="pickup-slot-grid" id="pickupSlotGrid"></div>
+
+            <div class="pickup-selected-display" id="pickupSelectedDisplay">
+                <span class="empty">請點選上方時段</span>
+            </div>
+
+            <div class="modal-error" id="pickupError"></div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" id="pickupModalCancel">取消</button>
+                <button class="btn-confirm" id="pickupModalConfirm" disabled>確認取餐</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 許願池 Modal ===== -->
+    <div class="modal-overlay" id="wishModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>⭐ 許願池</h3>
+                <button class="modal-close" id="wishModalClose">✕</button>
+            </div>
+            <div class="modal-sub">寫下您想吃的口味，我們會評估納入未來菜單！</div>
+            <div class="wish-input-wrap">
+                <input type="text" id="wishInput" placeholder="請輸入您想吃的冰淇淋口味（例如：海鹽焦糖）" maxlength="50" />
+                <div class="wish-hint">🔮 您的願望會傳送給我們，感謝您的建議！</div>
+            </div>
+            <div class="modal-error" id="wishError"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="wishCancelBtn">取消</button>
+                <button class="btn-confirm" id="wishConfirmBtn">送出願望 ✨</button>
+            </div>
+        </div>
+    </div>
+
+    <script
+        id="liff-sdk"
+        src="https://static.line-scdn.net/liff/edge/2/sdk.js"
+        onload="window.dispatchEvent(new Event('liff-sdk-ready'))"
+        onerror="window.dispatchEvent(new Event('liff-sdk-error'))"
+    ></script>
+    <script type="module">
+        // 初始化 LIFF，取得 User ID
+        const liff = await new Promise((resolve, reject) => {
+            if (window.liff) {
+                resolve(window.liff);
+                return;
+            }
+
+            const handleReady = () => {
+                if (window.liff) resolve(window.liff);
+                else resolve(null);
+            };
+            const handleError = () => resolve(null);
+            window.addEventListener('liff-sdk-ready', handleReady, { once: true });
+            window.addEventListener('liff-sdk-error', handleError, { once: true });
+        });
+
+        if (liff) {
+            liff.init({ liffId: '2011536222-v4OvTSup' }).then(() => {
+                if (liff.isLoggedIn()) {
+                    liff.getProfile().then(profile => {
+                        window.liffUserId = profile.userId;
+                    });
+                }
+            }).catch(err => console.error('LIFF 初始化失敗:', err));
+        } else {
+            console.error('LIFF SDK 載入失敗，將略過使用者通知');
+        }
+
+        import { initializeApp } from 'firebase/app';
+        import { getDatabase, ref, onValue, push, set } from 'firebase/database';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDvzZKr2x3TGeOFZGisKKXjbYH00DLVhKg",
+            authDomain: "omg-menu-5761a.firebaseapp.com",
+            databaseURL: "https://omg-menu-5761a-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "omg-menu-5761a",
+            storageBucket: "omg-menu-5761a.firebasestorage.app",
+            messagingSenderId: "193209930119",
+            appId: "1:193209930119:web:d9216165be9ef6c0bcc322"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // DOM
+        const todayGrid = document.getElementById('todayGrid'),
+            todayScroll = document.getElementById('todayScroll'),
+            scrollFill = document.getElementById('scrollFill');
+        const syncText = document.getElementById('syncText'),
+            indicatorDot = document.getElementById('indicatorDot'),
+            updateTimeDisplay = document.getElementById('updateTimeDisplay');
+        const duetOrderDisplay = document.getElementById('duetOrderDisplay'),
+            cupOrderDisplay = document.getElementById('cupOrderDisplay'),
+            shareOrderDisplay = document.getElementById('shareOrderDisplay');
+        const clearAllBtn = document.getElementById('clearAllBtn'),
+            sendLineBtn = document.getElementById('sendLineBtn');
+        const modeDuet = document.getElementById('modeDuet'),
+            modeCup = document.getElementById('modeCup'),
+            modeShare = document.getElementById('modeShare');
+        const fingerSwipe = document.getElementById('fingerSwipe');
+        const toast = document.getElementById('floatingToast'),
+            toastMessage = document.getElementById('toastMessage');
+
+        const currentModeLabel = document.getElementById('currentModeLabel');
+        const pendingBadge = document.getElementById('pendingBadge');
+        const pendingBadgeFlavor = document.getElementById('pendingBadgeFlavor');
+        const summaryList = document.getElementById('summaryList');
+        const summaryBadge = document.getElementById('summaryBadge');
+        const summaryTotalAmount = document.getElementById('summaryTotalAmount');
+
+        // 分享盒
+        const shareModal = document.getElementById('shareModal');
+        const modalChipList = document.getElementById('modalChipList');
+        const modalSelectedCount = document.getElementById('modalSelectedCount');
+        const modalError = document.getElementById('modalError');
+        const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+        const modalCancelBtn = document.getElementById('modalCancelBtn');
+        const modalCloseBtn = document.getElementById('modalCloseBtn');
+
+        // 取餐 Modal
+        const pickupModal = document.getElementById('pickupModal');
+        const pickupDateTabs = document.querySelectorAll('.pickup-date-tab');
+        const pickupSlotGrid = document.getElementById('pickupSlotGrid');
+        const pickupSelectedDisplay = document.getElementById('pickupSelectedDisplay');
+        const pickupError = document.getElementById('pickupError');
+        const pickupModalConfirm = document.getElementById('pickupModalConfirm');
+        const pickupModalCancel = document.getElementById('pickupModalCancel');
+        const pickupModalClose = document.getElementById('pickupModalClose');
+
+        // 許願池
+        const wishModal = document.getElementById('wishModal');
+        const wishInput = document.getElementById('wishInput');
+        const wishError = document.getElementById('wishError');
+        const wishConfirmBtn = document.getElementById('wishConfirmBtn');
+        const wishCancelBtn = document.getElementById('wishCancelBtn');
+        const wishModalClose = document.getElementById('wishModalClose');
+        const wishTriggerBtn = document.getElementById('wishTriggerBtn');
+
+        let toastTimer = null;
+        let shareBoxes = [];
+        let modalSelectedFlavors = [];
+        let modalAvailableFlavors = [];
+
+        let selectedDate = 'today';
+        let selectedSlot = null;
+
+        const PRICE_MAP = { duet: 120, cup: 100, share: 420 };
+        let duetPairs = [],
+            cupMap = {},
+            pendingDuetFlavor = null,
+            activeTarget = 'duet';
+
+        // ---- 工具 ----
+        function showToast(msg, icon = '🍨') {
+            toastMessage.textContent = msg;
+            toast.querySelector('.icon').textContent = icon;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+        }
+
+        function escapeHtml(s) { return s ? s.replace(/&/g, '&amp;').replace(/</g, '&lt;') : ''; }
+
+        function getCurrentTime() { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d
+                .getMinutes()).padStart(2, '0'); }
+
+        function setSyncStatus(status, text) {
+            indicatorDot.className = 'indicator ' + status;
+            syncText.textContent = text;
+            updateTimeDisplay.textContent = '更新於 ' + getCurrentTime();
+        }
+
+        function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+
+        function getTodayDate() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2,
+                '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+
+        function getTomorrowDate() { const d = new Date();
+            d.setDate(d.getDate() + 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                String(d.getDate()).padStart(2, '0'); }
+
+        function getCurrentHour() { return new Date().getHours(); }
+
+        function getCurrentMinute() { return new Date().getMinutes(); }
+
+        // ---- 分享盒 ----
+        function openShareModal() {
+            const cards = document.querySelectorAll('#todayGrid .today-card:not(.sold-out)');
+            const flavors = [];
+            cards.forEach(card => {
+                const name = card.dataset.flavor;
+                if (name && !flavors.includes(name)) flavors.push(name);
+            });
+            if (flavors.length === 0) {
+                showToast('目前沒有可選的口味', '⚠️');
+                return;
+            }
+            modalAvailableFlavors = flavors;
+            modalSelectedFlavors = [];
+            renderModalChips();
+            modalError.textContent = '';
+            shareModal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+            updateModalUI();
+        }
+
+        function closeShareModal() {
+            shareModal.classList.remove('open');
+            document.body.style.overflow = '';
+            modalSelectedFlavors = [];
+            modalError.textContent = '';
+        }
+
+        function renderModalChips() {
+            modalChipList.innerHTML = modalAvailableFlavors.map(name => {
+                const color = COLOR_MAP[name] || '#D5C8BF';
+                return `
+                    <div class="modal-chip" data-flavor="${escapeHtml(name)}">
+                        <span class="chip-dot" style="background:${color};"></span>
+                        <span class="chip-label">${escapeHtml(name)}</span>
+                        <span class="chip-check">✓</span>
+                    </div>
+                `;
+            }).join('');
+
+            modalChipList.querySelectorAll('.modal-chip').forEach(el => {
+                el.addEventListener('click', () => {
+                    const name = el.dataset.flavor;
+                    const idx = modalSelectedFlavors.indexOf(name);
+                    if (idx > -1) {
+                        modalSelectedFlavors.splice(idx, 1);
+                        el.classList.remove('selected');
+                    } else {
+                        if (modalSelectedFlavors.length >= 3) {
+                            modalError.textContent = '⚠️ 最多只能選 3 種口味！';
+                            return;
+                        }
+                        modalSelectedFlavors.push(name);
+                        el.classList.add('selected');
+                        modalError.textContent = '';
+                    }
+                    updateModalUI();
+                });
+            });
+        }
+
+        function updateModalUI() {
+            const count = modalSelectedFlavors.length;
+            modalSelectedCount.textContent = `已選 ${count} 種`;
+            const valid = count >= 2 && count <= 3;
+            modalConfirmBtn.disabled = !valid;
+            if (count > 0 && count < 2) modalError.textContent = '⚠️ 請至少選擇 2 種口味';
+            else if (count >= 2 && count <= 3) modalError.textContent = '';
+            else if (count > 3) modalError.textContent = '⚠️ 最多只能選 3 種口味！';
+            else modalError.textContent = '';
+
+            const allChips = modalChipList.querySelectorAll('.modal-chip');
+            allChips.forEach(chip => {
+                const name = chip.dataset.flavor;
+                const isSelected = modalSelectedFlavors.includes(name);
+                if (count >= 3 && !isSelected) chip.classList.add('disabled');
+                else chip.classList.remove('disabled');
+            });
+        }
+
+        function confirmShareModal() {
+            const count = modalSelectedFlavors.length;
+            if (count < 2 || count > 3) {
+                modalError.textContent = count < 2 ? '⚠️ 請至少選擇 2 種口味' : '⚠️ 最多只能選 3 種口味！';
+                return;
+            }
+            shareBoxes.push({ flavors: [...modalSelectedFlavors] });
+            showToast(`✅ 已加入分享盒 (${modalSelectedFlavors.join(' + ')})`, '🎁');
+            closeShareModal();
+            updateOrderDisplay();
+        }
+
+        modalCancelBtn.addEventListener('click', closeShareModal);
+        modalCloseBtn.addEventListener('click', closeShareModal);
+        modalConfirmBtn.addEventListener('click', confirmShareModal);
+        shareModal.addEventListener('click', (e) => { if (e.target === shareModal) closeShareModal(); });
+
+        // ---- 取餐時間 ----
+        function buildSlotGrid() {
+            const slots = [];
+            for (let h = 13; h <= 20; h++) {
+                slots.push(`${h}:00`);
+                if (h < 20) slots.push(`${h}:30`);
+            }
+
+            const nowHour = getCurrentHour();
+            const nowMin = getCurrentMinute();
+            const isToday = selectedDate === 'today';
+
+            let html = '';
+            slots.forEach(slot => {
+                const [h, m] = slot.split(':').map(Number);
+                let disabled = false;
+                if (isToday) {
+                    if (h < nowHour) disabled = true;
+                    else if (h === nowHour && m <= nowMin) disabled = true;
+                }
+                const selected = (selectedSlot === slot);
+                html += `<div class="pickup-slot ${selected?'selected':''} ${disabled?'disabled':''}" data-slot="${slot}">${slot}</div>`;
+            });
+            pickupSlotGrid.innerHTML = html;
+
+            pickupSlotGrid.querySelectorAll('.pickup-slot:not(.disabled)').forEach(el => {
+                el.addEventListener('click', () => {
+                    pickupSlotGrid.querySelectorAll('.pickup-slot').forEach(x => x.classList.remove(
+                    'selected'));
+                    el.classList.add('selected');
+                    selectedSlot = el.dataset.slot;
+                    updatePickupDisplay();
+                    pickupModalConfirm.disabled = false;
+                    pickupError.textContent = '';
+                });
+            });
+
+            if (selectedSlot !== null) {
+                const slotEl = pickupSlotGrid.querySelector(`.pickup-slot[data-slot="${selectedSlot}"]`);
+                if (slotEl && slotEl.classList.contains('disabled')) {
+                    selectedSlot = null;
+                    updatePickupDisplay();
+                    pickupModalConfirm.disabled = true;
+                }
+            }
+            updatePickupDisplay();
+        }
+
+        function updatePickupDisplay() {
+            const dateStr = selectedDate === 'today' ? '今天' : '明天';
+            if (selectedSlot !== null) {
+                pickupSelectedDisplay.innerHTML = `✅ ${dateStr} <strong>${selectedSlot}</strong>`;
+                pickupModalConfirm.disabled = false;
+            } else {
+                pickupSelectedDisplay.innerHTML = `<span class="empty">請點選上方時段</span>`;
+                pickupModalConfirm.disabled = true;
+            }
+        }
+
+        function setPickupDate(date) {
+            selectedDate = date;
+            pickupDateTabs.forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.date === date);
+            });
+            selectedSlot = null;
+            buildSlotGrid();
+            updatePickupDisplay();
+            pickupError.textContent = '';
+        }
+
+        function openPickupModal() {
+            setPickupDate('today');
+            const nowHour = getCurrentHour();
+            const nowMin = getCurrentMinute();
+            let defaultSlot = null;
+            for (let h = 13; h <= 20; h++) {
+                for (let m of [0, 30]) {
+                    if (h === 20 && m === 30) break;
+                    if (h > nowHour || (h === nowHour && m > nowMin) || (h === nowHour && m === nowMin)) {
+                        defaultSlot = `${h}:${String(m).padStart(2,'0')}`;
+                        break;
+                    }
+                }
+                if (defaultSlot) break;
+            }
+            if (!defaultSlot) {
+                setPickupDate('tomorrow');
+                defaultSlot = '13:00';
+            }
+            setTimeout(() => {
+                const slotEl = pickupSlotGrid.querySelector(`.pickup-slot[data-slot="${defaultSlot}"]:not(.disabled)`);
+                if (slotEl) slotEl.click();
+                else {
+                    const first = pickupSlotGrid.querySelector('.pickup-slot:not(.disabled)');
+                    if (first) first.click();
+                }
+            }, 50);
+
+            pickupModal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePickupModal() {
+            pickupModal.classList.remove('open');
+            document.body.style.overflow = '';
+            pickupError.textContent = '';
+        }
+
+        pickupDateTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                setPickupDate(tab.dataset.date);
+            });
+        });
+
+        pickupModalConfirm.addEventListener('click', () => {
+            if (pickupModalConfirm.disabled) return;
+            if (selectedSlot === null) {
+                pickupError.textContent = '請選擇時段';
+                return;
+            }
+            closePickupModal();
+            const dateStr = selectedDate === 'today' ? '今天' : '明天';
+            const pickupText = `${dateStr} ${selectedSlot}`;
+            sendOrderToLine(pickupText);
+        });
+
+        pickupModalCancel.addEventListener('click', closePickupModal);
+        pickupModalClose.addEventListener('click', closePickupModal);
+        pickupModal.addEventListener('click', (e) => { if (e.target === pickupModal) closePickupModal(); });
+
+        // ============================================================
+        // ★★★ 許願池（完整版 + 修復按鈕） ★★★
+        // ============================================================
+
+        function openWishModal() {
+            console.log('✅ openWishModal 被觸發');
+            try {
+                if (!wishInput) { console.error('wishInput 不存在'); return; }
+                wishInput.value = '';
+                wishError.textContent = '';
+                wishConfirmBtn.disabled = false;
+                wishConfirmBtn.textContent = '送出願望 ✨';
+                wishModal.classList.add('open');
+                document.body.style.overflow = 'hidden';
+                wishInput.focus();
+                console.log('✅ 許願池已開啟');
+            } catch(e) {
+                console.error('openWishModal 錯誤:', e);
+            }
+        }
+
+        function closeWishModal() {
+            wishModal.classList.remove('open');
+            document.body.style.overflow = '';
+            wishError.textContent = '';
+        }
+
+        function syncPendingWishes() {
+            const pending = JSON.parse(localStorage.getItem('pendingWishes') || '[]');
+            if (pending.length === 0) return;
+            const wishRef = ref(db, 'wishlist');
+            let successCount = 0;
+            pending.forEach((item, index) => {
+                const newRef = push(wishRef);
+                set(newRef, {
+                    flavor: item.flavor,
+                    timestamp: item.timestamp,
+                    date: item.date || new Date().toISOString().split('T')[0],
+                    status: 'pending'
+                }).then(() => {
+                    successCount++;
+                    if (successCount === pending.length) {
+                        localStorage.removeItem('pendingWishes');
+                        showToast(`✅ 已同步 ${successCount} 筆願望`, '📡');
+                    }
+                }).catch(err => {
+                    console.warn('同步本機願望失敗', err);
+                });
+            });
+        }
+
+        // ===== ★ 許願池（含送出特效） =====
+        function submitWish() {
+            const val = wishInput.value.trim();
+            if (!val) { wishError.textContent = '請輸入您想吃的口味名稱'; return; }
+            if (val.length < 2) { wishError.textContent = '請輸入至少 2 個字'; return; }
+
+            // 禁用按鈕，顯示送出中
+            wishConfirmBtn.disabled = true;
+            wishConfirmBtn.textContent = '⏳ 送出中...';
+            wishError.textContent = '';
+
+            const wishData = {
+                flavor: val,
+                timestamp: Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                status: 'pending'
+            };
+
+            const wishRef = ref(db, 'wishlist');
+            const newWishRef = push(wishRef);
+            set(newWishRef, wishData)
+                .then(() => {
+                    // ✅ 送出成功 → 觸發特效
+                    showWishSuccessEffect(val);
+                    // 關閉 Modal（延遲，讓特效先出現）
+                    setTimeout(() => {
+                        closeWishModal();
+                        wishConfirmBtn.disabled = false;
+                        wishConfirmBtn.textContent = '送出願望 ✨';
+                    }, 1800);
+                })
+                .catch(err => {
+                    console.warn('Firebase 寫入失敗，儲存至本機', err);
+                    const pending = JSON.parse(localStorage.getItem('pendingWishes') || '[]');
+                    pending.push(wishData);
+                    localStorage.setItem('pendingWishes', JSON.stringify(pending));
+                    showToast('📡 已記錄，網路恢復後自動同步', '💾');
+                    closeWishModal();
+                    wishConfirmBtn.disabled = false;
+                    wishConfirmBtn.textContent = '送出願望 ✨';
+                });
+        }
+
+        // ===== 🎆 許願成功特效 =====
+        function showWishSuccessEffect(flavorName) {
+            // 建立全屏遮罩
+            const overlay = document.createElement('div');
+            overlay.id = 'wishSuccessOverlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.6);
+                backdrop-filter: blur(8px);
+                z-index: 99999;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                animation: fadeInOverlay 0.5s ease;
+            `;
+            
+            // 內容
+            overlay.innerHTML = `
+                <div style="text-align: center; padding: 20px; animation: bounceIn 0.6s ease;">
+                    <div style="font-size: 72px; margin-bottom: 10px;">⭐</div>
+                    <div style="font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 6px;">願望已送出！</div>
+                    <div style="font-size: 18px; color: #e8ddd2; margin-bottom: 4px;">「${escapeHtml(flavorName)}」</div>
+                    <div style="font-size: 14px; color: #b0a094;">我們會認真評估您的建議 ✨</div>
+                </div>
+            `;
+
+            // 加入星星飄落特效
+            const emojis = ['✨', '⭐', '🌟', '💫', '❤️', '🌸', '🎉'];
+            for (let i = 0; i < 30; i++) {
+                const el = document.createElement('div');
+                el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                el.style.cssText = `
+                    position: fixed;
+                    font-size: ${20 + Math.random() * 30}px;
+                    left: ${Math.random() * 100}%;
+                    top: -30px;
+                    opacity: ${0.7 + Math.random() * 0.3};
+                    pointer-events: none;
+                    z-index: 100000;
+                    animation: floatDown ${2 + Math.random() * 2}s ease-in forwards;
+                    animation-delay: ${Math.random() * 0.8}s;
+                `;
+                overlay.appendChild(el);
+            }
+
+            document.body.appendChild(overlay);
+
+            // 自動移除（1.8 秒後）
+            setTimeout(() => {
+                overlay.remove();
+            }, 2200);
+        }
+
+        // ===== 加入動畫 Keyframes =====
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = `
+            @keyframes fadeInOverlay {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes bounceIn {
+                0% { transform: scale(0.5); opacity: 0; }
+                60% { transform: scale(1.1); }
+                100% { transform: scale(1); opacity: 1; }
+            }
+            @keyframes floatDown {
+                0% { transform: translateY(0) rotate(0deg) scale(0.5); opacity: 0; }
+                10% { opacity: 1; transform: translateY(20px) rotate(10deg) scale(1); }
+                100% { transform: translateY(110vh) rotate(720deg) scale(0.8); opacity: 0.3; }
+            }
+        `;
+        document.head.appendChild(styleSheet);
+
+        // ===== 重新綁定許願池按鈕（修復點擊問題） =====
+        // 移除舊監聽器（避免重複綁定）
+        const newWishBtn = wishTriggerBtn.cloneNode(true);
+        wishTriggerBtn.parentNode.replaceChild(newWishBtn, wishTriggerBtn);
+        newWishBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('✅ 許願池按鈕被點擊');
+            openWishModal();
+        });
+
+        // 綁定其他按鈕
+        wishCancelBtn.addEventListener('click', closeWishModal);
+        wishModalClose.addEventListener('click', closeWishModal);
+        wishModal.addEventListener('click', function(e) {
+            if (e.target === wishModal) closeWishModal();
+        });
+        wishConfirmBtn.addEventListener('click', submitWish);
+        wishInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') submitWish();
+        });
+
+        console.log('✅ 許願池按鈕已重新綁定');
+
+        // ---- 訂單核心 ----
+        function updateModeLabel(mode) {
+            const labelMap = { duet: '雙重奏', cup: '獨享杯', share: '分享盒' };
+            const text = labelMap[mode] || '雙重奏';
+            if (currentModeLabel) currentModeLabel.textContent = text;
+
+            modeDuet.classList.toggle('active', mode === 'duet');
+            modeCup.classList.toggle('active', mode === 'cup');
+            modeShare.classList.toggle('active', mode === 'share');
+            updatePendingBadge();
+        }
+
+        function updatePendingBadge() {
+            if (activeTarget === 'duet' && pendingDuetFlavor !== null) {
+                pendingBadge.classList.add('show');
+                pendingBadgeFlavor.textContent = pendingDuetFlavor;
+            } else {
+                pendingBadge.classList.remove('show');
+            }
+        }
+
+        function setActiveMode(mode) {
+            if (mode === 'share') {
+                if (activeTarget !== 'share') {
+                    pendingDuetFlavor = null;
+                    activeTarget = mode;
+                    updateModeLabel(mode);
+                    updateOrderDisplay();
+                }
+                setTimeout(() => openShareModal(), 80);
+                return;
+            }
+            if (mode === activeTarget) return;
+            pendingDuetFlavor = null;
+            activeTarget = mode;
+            updateModeLabel(mode);
+            updateOrderDisplay();
+            const modeNames = { duet: '雙重奏', cup: '獨享杯', share: '分享盒' };
+            showToast(`切換至 ${modeNames[mode]} 模式`, '🔄');
+        }
+
+        function handleFlavorClick(flavor, sold) {
+            if (sold) { showToast('已售完', '❌'); return; }
+            if (activeTarget === 'duet') appendDuetFlavor(flavor);
+            else if (activeTarget === 'cup') appendCupFlavor(flavor);
+            else if (activeTarget === 'share') openShareModal();
+        }
+
+        function appendDuetFlavor(flavor) {
+            if (pendingDuetFlavor !== null) {
+                duetPairs.push([pendingDuetFlavor, flavor]);
+                showToast(`配對成功！${pendingDuetFlavor} + ${flavor}`, '✅');
+                pendingDuetFlavor = null;
+                updateOrderDisplay();
+            } else {
+                pendingDuetFlavor = flavor;
+                showToast(`已選「${flavor}」，請再選另一種`, '⏳');
+                updateOrderDisplay();
+            }
+        }
+
+        function appendCupFlavor(flavor) {
+            cupMap[flavor] = (cupMap[flavor] || 0) + 1;
+            showToast(`已加入 ${flavor} (${cupMap[flavor]}杯)`, '🍦');
+            updateOrderDisplay();
+        }
+
+        function clearAll() {
+            duetPairs = [];
+            cupMap = {};
+            shareBoxes = [];
+            pendingDuetFlavor = null;
+            updateOrderDisplay();
+            showToast('已清空', '🧹');
+        }
+
+        function updateOrderDisplay() {
+            if (duetPairs.length === 0) { duetOrderDisplay.textContent = '尚未選取';
+                duetOrderDisplay.className = 'content empty'; } else { const pairMap = {};
+                duetPairs.forEach(([a, b]) => { const key = [a, b].sort().join('+'); pairMap[key] = (pairMap[key] ||
+                        0) + 1; });
+                const parts = [];
+                for (const [key, count] of Object.entries(pairMap)) { const [f1, f2] = key.split('+'); parts.push(
+                        `${f1}+${f2}(${count}杯)`); }
+                duetOrderDisplay.textContent = parts.join('、');
+                duetOrderDisplay.className = 'content'; }
+
+            const cupKeys = Object.keys(cupMap);
+            if (cupKeys.length === 0) { cupOrderDisplay.textContent = '尚未選取';
+                cupOrderDisplay.className = 'content empty'; } else { const parts = [];
+                for (const [flavor, count] of Object.entries(cupMap)) { parts.push(flavor + (count === 1 ? ' 1杯' :
+                        ' *' + count + '杯')); }
+                cupOrderDisplay.textContent = parts.join('、');
+                cupOrderDisplay.className = 'content'; }
+
+            if (shareBoxes.length === 0) { shareOrderDisplay.textContent = '尚未選取';
+                shareOrderDisplay.className = 'content empty'; } else { const parts = shareBoxes.map((box, i) => {
+                    const flavors = box.flavors.join(' + ');
+                    return `#${i+1} ${flavors}`;
+                });
+                shareOrderDisplay.textContent = parts.join('、');
+                shareOrderDisplay.className = 'content'; }
+
+            updatePendingBadge();
+            renderSummary();
+        }
+
+        function renderSummary() {
+            const items = [];
+            let total = 0;
+            if (duetPairs.length > 0) {
+                const pairMap = {};
+                duetPairs.forEach(([a, b]) => { const key = [a, b].sort().join('+'); pairMap[key] = (pairMap[key] ||
+                    0) + 1; });
+                for (const [key, count] of Object.entries(pairMap)) {
+                    const [f1, f2] = key.split('+');
+                    const subtotal = count * PRICE_MAP.duet;
+                    total += subtotal;
+                    items.push({ emoji: '', label: `雙重奏 × ${count}杯`, detail: `${f1} + ${f2}`, count,
+                    subtotal });
+                }
+            }
+            const cupKeys = Object.keys(cupMap);
+            if (cupKeys.length > 0) {
+                for (const [flavor, count] of Object.entries(cupMap)) {
+                    const subtotal = count * PRICE_MAP.cup;
+                    total += subtotal;
+                    items.push({ emoji: '', label: `獨享杯 × ${count}杯`, detail: flavor, count, subtotal });
+                }
+            }
+            if (shareBoxes.length > 0) {
+                shareBoxes.forEach((box, idx) => {
+                    const flavors = box.flavors.join(' + ');
+                    const subtotal = PRICE_MAP.share;
+                    total += subtotal;
+                    items.push({ emoji: '', label: `分享盒 #${idx+1}`, detail: flavors, count: 1, subtotal });
+                });
+            }
+            const totalItems = duetPairs.length + Object.values(cupMap).reduce((a, b) => a + b, 0) + shareBoxes.length;
+            summaryBadge.textContent = `${totalItems} 項`;
+            if (items.length === 0) {
+                summaryList.innerHTML = `<div class="summary-empty">尚未選擇商品無法傳送</div>`;
+            } else {
+                let html = '';
+                items.forEach(item => {
+                    html += `
+                        <div class="summary-item">
+                            <div class="left">
+                                <span class="emoji">${item.emoji}</span>
+                                <span class="label">${escapeHtml(item.label)}</span>
+                                <span class="detail">${escapeHtml(item.detail)}</span>
+                            </div>
+                            <div class="right">
+                                <span class="qty">×${item.count}</span>
+                                $${item.subtotal}
+                            </div>
+                        </div>
+                    `;
+                });
+                summaryList.innerHTML = html;
+            }
+            summaryTotalAmount.textContent = total;
+        }
+
+        // ---- 訂單文字產生 ----
+        function generateOrderText(pickupText) {
+            const lines = [];
+            let total = 0;
+            let hasItem = false;
+            const itemLines = [];
+
+            const cupKeys = Object.keys(cupMap);
+            if (cupKeys.length > 0) {
+                let cupCount = 0;
+                for (const [flavor, count] of Object.entries(cupMap)) cupCount += count;
+                const cupTotal = cupCount * PRICE_MAP.cup;
+                total += cupTotal;
+                hasItem = true;
+                itemLines.push(`獨享杯 × ${cupCount}杯 = $${cupTotal}`);
+                const cupEntries = Object.entries(cupMap);
+                cupEntries.forEach(([flavor, count], index) => {
+                    const isLast = index === cupEntries.length - 1;
+                    const prefix = isLast ? '   └─ ' : '   ├─ ';
+                    itemLines.push(`${prefix}${flavor} ${count}杯`);
+                });
+                itemLines.push('');
+            }
+
+            if (duetPairs.length > 0) {
+                const pairMap = {};
+                duetPairs.forEach(([a, b]) => {
+                    const key = [a, b].sort().join('+');
+                    pairMap[key] = (pairMap[key] || 0) + 1;
+                });
+                const duetCount = duetPairs.length;
+                const duetTotal = duetCount * PRICE_MAP.duet;
+                total += duetTotal;
+                hasItem = true;
+                itemLines.push(`雙重奏 × ${duetCount}杯 = $${duetTotal}`);
+                const entries = Object.entries(pairMap);
+                entries.forEach(([key, count], index) => {
+                    const [f1, f2] = key.split('+');
+                    const isLast = index === entries.length - 1;
+                    const prefix = isLast ? '   └─ ' : '   ├─ ';
+                    itemLines.push(`${prefix}${f1} + ${f2} (${count}杯)`);
+                });
+                itemLines.push('');
+            }
+
+            if (shareBoxes.length > 0) {
+                const shareTotal = shareBoxes.length * PRICE_MAP.share;
+                total += shareTotal;
+                hasItem = true;
+                itemLines.push(`分享盒 × ${shareBoxes.length}盒 = $${shareTotal}`);
+                shareBoxes.forEach((box, idx) => {
+                    const isLast = idx === shareBoxes.length - 1;
+                    const prefix = isLast ? '   └─ ' : '   ├─ ';
+                    itemLines.push(`${prefix}#${idx+1} ${box.flavors.join(' + ')}`);
+                });
+                itemLines.push('');
+            }
+
+            if (!hasItem) {
+                return '（尚未選取）';
+            }
+
+            lines.push('⚠️新的訂單店家確認中⚠️');
+            if (pickupText) {
+                lines.push(`取貨時間：${pickupText}`);
+            }
+            lines.push(`。。總額。$。${total}。。`);
+            lines.push('');
+            for (let i = 0; i < itemLines.length; i++) {
+                const line = itemLines[i];
+                if (i === itemLines.length - 1 && line === '') continue;
+                lines.push(line);
+            }
+            lines.push('');
+            lines.push('❌訂單未送出請立即傳送▶️');
+            lines.push('(1)傳送完敬請等待店家回覆');
+            lines.push('(2)等待確認店家有回覆訊息');
+            lines.push('(3)店家有回覆您訂單即成立');
+
+            while (lines.length > 0 && lines[0] === '') lines.shift();
+            while (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+            return lines.join('\n');
+        }
+
+        function sendOrderToLine(pickupText) {
+            const body = generateOrderText(pickupText);
+            if (body === '（尚未選取）') {
+                showToast('請先選取口味', '⚠️');
+                return;
+            }
+
+            // 呼叫我們的 API 來自動發送通知
+            fetch('/api/notify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderText: body,
+                    userId: window.liffUserId || null,
+                }),
+            }).catch(err => console.error('通知失敗:', err));
+
+            const LINE_ID = '@585fychj';
+            const lineUrl = `https://line.me/R/oaMessage/${LINE_ID}/?${encodeURIComponent(body)}`;
+            window.open(lineUrl, '_blank');
+            showToast('已開啟 LINE 官方帳號', '💬');
+        }
+
+        // ---- 事件綁定 ----
+        modeDuet.addEventListener('click', () => setActiveMode('duet'));
+        modeCup.addEventListener('click', () => setActiveMode('cup'));
+        modeShare.addEventListener('click', () => setActiveMode('share'));
+        clearAllBtn.addEventListener('click', clearAll);
+
+        sendLineBtn.addEventListener('click', () => {
+            const hasItems = duetPairs.length > 0 || Object.keys(cupMap).length > 0 || shareBoxes.length > 0;
+            if (!hasItems) { showToast('請先選取口味', '⚠️'); return; }
+            openPickupModal();
+        });
+
+        document.getElementById('todayGrid').addEventListener('click', (e) => {
+            const card = e.target.closest('.today-card');
+            if (!card) return;
+            handleFlavorClick(card.dataset.flavor, card.dataset.sold === 'true');
+        });
+
+        // ---- Firebase: todayFlavors ----
+        function handleFingerSwipe(show) {
+            if (!fingerSwipe) return;
+            if (show) {
+                fingerSwipe.classList.remove('hidden');
+                clearTimeout(window.fingerTimer);
+                window.fingerTimer = setTimeout(() => {
+                    fingerSwipe.classList.add('hidden');
+                    setTimeout(() => fingerSwipe.style.display = 'none', 600);
+                }, 3800);
+            } else {
+                fingerSwipe.classList.add('hidden');
+                fingerSwipe.style.display = 'none';
+            }
+        }
+
+        function checkScrollable() {
+            const isScrollable = todayScroll.scrollWidth > todayScroll.clientWidth;
+            if (isScrollable) { fingerSwipe.style.display = 'block';
+                handleFingerSwipe(true); } else handleFingerSwipe(false);
+        }
+        todayScroll.addEventListener('scroll', () => {
+            if (fingerSwipe && !fingerSwipe.classList.contains('hidden')) {
+                fingerSwipe.classList.add('hidden');
+                setTimeout(() => fingerSwipe.style.display = 'none', 600);
+            }
+        });
+
+        onValue(ref(db, 'todayFlavors'), (s) => {
+            const data = s.val();
+            if (!data) { todayGrid.innerHTML = '<div class="today-empty">今天還沒有特別推薦 🍽️</div>';
+                setSyncStatus('online', '同步中');
+                checkScrollable(); return; }
+            const items = Object.keys(data).map(k => ({ id: k, ...data[k] }));
+            items.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+            if (!items.length) { todayGrid.innerHTML = '<div class="today-empty">今天還沒有特別推薦 🍽️</div>';
+                setSyncStatus('online', '同步中');
+                checkScrollable(); return; }
+            let html = '';
+            items.forEach(item => {
+                const sold = item.soldOut === true;
+                const color = COLOR_MAP[item.name] || '#D5C8BF';
+                html += `<div class="today-card ${sold?'sold-out':''}" data-flavor="${escapeHtml(item.name)}" data-sold="${sold}">${sold?'<span class="sold-tag">售完</span>':''}<div class="color-tag" style="background:${color};"></div><div class="today-name">${escapeHtml(item.name)}</div>${item.desc?`<div class="today-desc">${escapeHtml(item.desc)}</div>`:''}</div>`;
+            });
+            todayGrid.innerHTML = html;
+            setSyncStatus('online', '同步中');
+            setTimeout(checkScrollable, 400);
+        }, () => { todayGrid.innerHTML = '<div class="today-empty">連線服務中斷⋯口味無法同步,請至門市直接洽詢</div>';
+            setSyncStatus('offline', '離線'); });
+
+        // ---- siteConfig ----
+        function loadSiteConfig() {
+            onValue(ref(db, 'siteConfig'), (s) => {
+                const d = s.val();
+                if (!d) return;
+                setText('brandMainTitle', d.brand?.mainTitle || 'OMG! Gelato');
+                const subEl = document.getElementById('todaySectionTitle');
+                if (subEl) subEl.textContent = d.brand?.subTitle || '🪧今日口味 & 店內冰櫃🪧';
+                const orderTitleEl = document.getElementById('orderSectionTitle');
+                if (orderTitleEl) orderTitleEl.textContent = d.brand?.orderTitle || '✨開始訂購 & 模擬試用✨';
+            });
+        }
+
+        // ---- 滾動指示器 ----
+        function updateScrollIndicator() {
+            const el = todayScroll,
+                fill = scrollFill;
+            if (!el || !fill) return;
+            const update = () => {
+                const max = el.scrollWidth - el.clientWidth;
+                if (max <= 0) { fill.style.width = '100%'; return; }
+                fill.style.width = Math.min((el.scrollLeft / max) * 100 + 20, 100) + '%';
+            };
+            el.addEventListener('scroll', update);
+            window.addEventListener('resize', update);
+            setTimeout(update, 200);
+        }
+
+        // ---- globalOverlay ----
+        onValue(ref(db, 'globalOverlay'), (snap) => {
+            const data = snap.val();
+            const existing = document.getElementById('globalOverlay');
+            if (data && data.isActive === true) {
+                if (existing) return;
+                const div = document.createElement('div');
+                div.id = 'globalOverlay';
+                div.style.cssText =
+                    'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:99999;padding:24px;';
+                div.innerHTML = `
+                    <div style="background:#fff;border-radius:32px;padding:40px 32px;max-width:480px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                        <div style="font-size:64px;margin-bottom:8px;">${data.title ? data.title.split(' ')[0] : '📢'}</div>
+                        <p style="font-size:18px;font-weight:600;color:#2d1b12;margin-bottom:4px;">${escapeHtml(data.title) || '公告'}</p>
+                        <p style="font-size:16px;color:#6b5b4e;line-height:1.8;white-space:pre-line;">${escapeHtml(data.content || '')}</p>
+                        <div style="margin-top:20px;padding-top:16px;border-top:1px solid #f0ebe6;font-size:13px;color:#b0a094;">${escapeHtml(data.subText || '')}</div>
+                        ${data.isForce ? '' : `<button id="closeOverlayBtn" style="margin-top:16px;background:#f0ebe6;border:none;padding:8px 24px;border-radius:30px;font-weight:600;cursor:pointer;">關閉</button>`}
+                    </div>
+                `;
+                document.body.appendChild(div);
+                document.body.style.overflow = 'hidden';
+                if (!data.isForce) {
+                    document.getElementById('closeOverlayBtn')?.addEventListener('click', () => {
+                        div.remove();
+                        document.body.style.overflow = '';
+                    });
+                }
+            } else {
+                if (existing) { existing.remove();
+                    document.body.style.overflow = ''; }
+            }
+        });
+
+        // ---- 初始化 ----
+        setSyncStatus('connecting', '連線中');
+        updateOrderDisplay();
+        updateModeLabel('duet');
+        setTimeout(checkScrollable, 600);
+        loadSiteConfig();
+        updateScrollIndicator();
+
+        document.getElementById('brandLogo')?.addEventListener('error', function() {
+            this.outerHTML = '<span style="font-size:72px;display:block;text-align:center;">🍨</span>';
+        });
+
+        const COLOR_MAP = {
+            '開心果': '#8CB872',
+            '草莓': '#E8837A',
+            '巧克力': '#8D7A6D',
+            '芒果': '#F5C542',
+            '抹茶': '#89B87C',
+            '香草': '#F5E6D3',
+            '咖啡': '#B5957A',
+            '檸檬': '#F5E56B',
+            '覆盆子': '#E8707A',
+            '椰奶': '#F5F0EA',
+            '百香果': '#F5B84D',
+            '牛奶': '#FDF8F0',
+            'Oreo': '#6B5A4D',
+            '香蕉': '#F5D87A',
+            '藍莓': '#7A8FC9',
+            '水蜜桃': '#F5D0C0',
+            '提拉米蘇': '#C4B0A0',
+            '紅茶': '#C4B0A0',
+            '伯爵奶茶': '#E0D5CC',
+            '榴槤': '#F5C542',
+            '芋頭牛奶': '#C9A8D0',
+            '綜合堅果': '#C4B0A0',
+            '芒果優格': '#F5C542',
+            '烏龍茶': '#A09080',
+            '70%巧克力': '#6B5A4D',
+            '白咖啡': '#D5C8BF',
+            '蜜香紅茶': '#D5C0A8',
+            '黑金芝麻': '#4A3A30',
+            '紅豆牛奶': '#D5A0A0',
+            '法芙娜': '#6B5A4D',
+            '波本香草': '#F5E6D3',
+            '迎香紅茶': '#D5C0A8',
+            '青心烏龍茶': '#A09080',
+            '藍莓優格': '#7A8FC9',
+            '百香果優格': '#F5B84D',
+            '榴蓮': '#F5C542',
+            '奇異果': '#89B87C',
+            '草莓優格': '#E8837A',
+            '火龍果': '#E8707A',
+            '奶茶': '#D5C8BF',
+            '熱帶水果': '#F5C542'
+        };
+
+        console.log('🍦 訂單面板已重新設計，樣式更整齊明瞭');
+    </script>
+    <!--Start of Tawk.to Script-->
+<script type="text/javascript">
+var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+(function(){
+var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+s1.async=true;
+s1.src='https://embed.tawk.to/6a8e259574bc52344a108ebb/default';
+s1.charset='UTF-8';
+s1.setAttribute('crossorigin','*');
+s0.parentNode.insertBefore(s1,s0);
+})();
+</script>
+<!--End of Tawk.to Script-->
+</body>
+</html>

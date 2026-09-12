@@ -1,7 +1,14 @@
 import type { NextConfig } from "next";
-
 const nextConfig: NextConfig = {
-  /* config options here */
+  allowedDevOrigins: ['exterior-frames-hearings-temp.trycloudflare.com'],
+  async redirects() {
+    return [
+      {
+        source: '/menu',
+        destination: '/menu/index.html',
+        permanent: false,
+      },
+    ];
+  },
 };
-
 export default nextConfig;
