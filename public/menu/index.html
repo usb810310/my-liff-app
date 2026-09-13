@@ -2476,6 +2476,11 @@
                 return;
             }
 
+            if (notifyResult.warning) {
+                console.warn('客人通知未送出:', notifyResult.warning);
+                showToast('店家已收到卡片，客人通知未送出', '⚠️');
+            }
+
             const LINE_ID = '@585fychj';
             const lineUrl = `https://line.me/R/oaMessage/${LINE_ID}/?${encodeURIComponent(body)}`;
             window.open(lineUrl, '_blank');

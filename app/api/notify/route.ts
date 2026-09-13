@@ -57,6 +57,8 @@ export async function POST(request: Request) {
       },
     };
 
+    let customerError: string | null = null;
+
     // 1. 通知客人
     if (userId) {
       const res = await fetch('https://api.line.me/v2/bot/message/push', {
@@ -65,9 +67,9 @@ export async function POST(request: Request) {
         body: JSON.stringify({ to: userId, messages: [customerCard] }),
       });
       if (!res.ok) {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({}));
         console.error('❌ 通知客人失敗:', JSON.stringify(err));
-        return NextResponse.json({ success: false, error: err.message || '通知客人失敗' }, { status: 502 });
+        customerError = err.message || `通知客人失敗（HTTP ${res.status}）`;
       }
     }
 
@@ -79,12 +81,12 @@ export async function POST(request: Request) {
     });
 
     if (!ownerRes.ok) {
-      const err = await ownerRes.json();
+      const err = await ownerRes.json().catch(() => ({}));
       console.error('❌ 通知店家失敗:', JSON.stringify(err));
       return NextResponse.json({ success: false, error: err.message || 'LINE API 錯誤' }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, warning: customerError });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
