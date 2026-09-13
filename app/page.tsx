@@ -110,7 +110,7 @@ export default function Home() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f2ef', paddingBottom: '80px', fontFamily: 'system-ui, sans-serif', position: 'relative' }}>
+    <div style={{ height: '100dvh', overflow: 'hidden', background: '#f5f2ef', fontFamily: 'system-ui, sans-serif', position: 'relative' }}>
       
       <style>{`
         @keyframes fadeInUp {
@@ -141,7 +141,7 @@ export default function Home() {
             <span style={{ color: '#4a4a4a' }}>My </span>
             <span style={{ color: '#ce2b37' }}>Gelato</span>
           </span>
-          <span style={{ fontSize: '12px', fontWeight: 400, color: '#8a7a6e', letterSpacing: '1px' }}>義式冰淇淋專賣店</span>
+          <span style={{ fontSize: '12px', fontWeight: 400, color: '#8a7a6e', letterSpacing: '1px' }}> 義式冰淇淋 專賣店</span>
         </div>
       </div>
 
@@ -151,6 +151,9 @@ export default function Home() {
         className="page-transition"
         style={{ 
           padding: '20px 16px',
+          height: 'calc(100dvh - 100px)',
+          overflowY: 'auto',
+          overscrollBehavior: 'contain',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'flex-start'
@@ -171,7 +174,7 @@ export default function Home() {
                 <>
                   <img src={profile.pictureUrl} style={{ width: '80px', height: '80px', borderRadius: '50%', border: '3px solid #e67e4a' }} />
                   <h2 style={{ fontSize: '22px', color: '#2c241e', marginTop: '12px' }}>你好，{profile.displayName}！</h2>
-                  <p style={{ color: '#8f8076', fontSize: '14px', marginBottom: '30px' }}>歡迎回來，今天想來點什麼？</p>
+                  <p style={{ color: '#8f8076', fontSize: '14px', marginBottom: '30px' }}>歡迎回來，今天想來點什麼口味呢？</p>
                 </>
               )}
               <a href="/menu/" style={{ display: 'block', background: '#06C755', color: '#fff', padding: '18px', borderRadius: '50px', fontSize: '18px', fontWeight: 'bold', textDecoration: 'none', boxShadow: '0 8px 20px rgba(6,199,85,0.3)' }}>
