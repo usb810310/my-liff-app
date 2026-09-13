@@ -178,7 +178,7 @@ export default function Home() {
                 </>
               )}
               <a href="/menu/" style={{ display: 'block', background: '#06C755', color: '#fff', padding: '18px', borderRadius: '50px', fontSize: '18px', fontWeight: 'bold', textDecoration: 'none', boxShadow: '0 8px 20px rgba(6,199,85,0.3)' }}>
-                🍦 立即點餐
+                查看今日口味｜線上立即訂購
               </a>
             </div>
           )}
