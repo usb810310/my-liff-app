@@ -1,10 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import liff from '@line/liff';
 
+type Profile = {
+  userId: string;
+  displayName: string;
+  pictureUrl: string;
+};
+
 export default function Home() {
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [status, setStatus] = useState('正在初始化 LIFF...');
 
   useEffect(() => {
@@ -18,11 +25,17 @@ export default function Home() {
         } else {
           setStatus('已登入，載入資料中...');
           const p = await liff.getProfile();
-          setProfile(p);
+          setProfile({
+            userId: p.userId,
+            displayName: p.displayName,
+            pictureUrl: p.pictureUrl ?? '',
+          });
           setStatus('🎉 歡迎！');
         }
-      } catch (err: any) {
-        setStatus('❌ 錯誤：' + (err.message || '未知錯誤'));
+      } catch (error) {
+        console.error('LIFF 初始化失敗:', error);
+        const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+        setStatus('❌ 錯誤：' + errorMessage);
       }
     };
     initLiff();
@@ -48,12 +61,12 @@ export default function Home() {
         textAlign: 'center',
         boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
       }}>
-        <img
+        <Image
           src="https://omg-gelato79.pages.dev/logo1.png"
           alt="OMG! Gelato Channel icon"
+          width={80}
+          height={80}
           style={{
-            width: '80px',
-            height: '80px',
             objectFit: 'contain',
             marginBottom: '10px',
           }}
@@ -70,10 +83,12 @@ export default function Home() {
 
         {profile && (
           <div style={{ marginBottom: '20px' }}>
-            <img 
-              src={profile.pictureUrl} 
+            <Image
+              src={profile.pictureUrl}
               alt="大頭貼" 
-              style={{ width: '64px', height: '64px', borderRadius: '50%' }} 
+              width={64}
+              height={64}
+              style={{ borderRadius: '50%' }}
             />
             <p style={{ fontSize: '16px', marginTop: '8px', color: '#2c241e' }}>
               你好，<strong>{profile.displayName}</strong>！

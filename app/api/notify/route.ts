@@ -13,7 +13,7 @@ export function OPTIONS() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { orderText, userId, displayName, pictureUrl } = body;
+    const { orderText, userId } = body;
 
     const CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
 
@@ -63,9 +63,11 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, warning: customerError }, { headers: corsHeaders });
-  } catch (error: any) {
+  } catch (error) {
+    console.error('❌ API 錯誤:', error);
+    const errorMessage = error instanceof Error ? error.message : '未知錯誤';
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500, headers: corsHeaders },
     );
   }
