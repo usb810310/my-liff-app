@@ -1,104 +1,4 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import liff from '@line/liff';
-
-export default function Home() {
-  const [profile, setProfile] = useState<any>(null);
-  const [status, setStatus] = useState('正在初始化...');
-  const [activeTab, setActiveTab] = useState('home'); // home, orders, member
-  const [orders, setOrders] = useState<any[]>([]);
-  const [wishText, setWishText] = useState('');
-  const [isSubmittingWish, setIsSubmittingWish] = useState(false);
-  const [wishSuccess, setWishSuccess] = useState(false);
-  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
-
-  useEffect(() => {
-    const initLiff = async () => {
-      try {
-        await liff.init({ liffId: '2011536222-v4OvTSup' });
-        if (!liff.isLoggedIn()) {
-          liff.login();
-        } else {
-          setStatus('載入中...');
-          const p = await liff.getProfile();
-          setProfile(p);
-          setStatus('');
-        }
-      } catch (err: any) {
-        setStatus('❌ 錯誤：' + (err.message || '未知錯誤'));
-      }
-    };
-    initLiff();
-  }, []);
-
-  const loadOrders = async () => {
-    if (!profile || !profile.userId) return;
-    setIsLoadingOrders(true);
-    try {
-      const { getApp, getApps, initializeApp } = await import('firebase/app');
-      const { getDatabase, ref, query, limitToLast, get } = await import('firebase/database');
-      const app = getApps().length ? getApp() : initializeApp({
-        apiKey: "AIzaSyDvzZKr2x3TGeOFZGisKKXjbYH00DLVhKg",
-        authDomain: "omg-menu-5761a.firebaseapp.com",
-        databaseURL: "https://omg-menu-5761a-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "omg-menu-5761a",
-        storageBucket: "omg-menu-5761a.firebasestorage.app",
-        messagingSenderId: "193209930119",
-        appId: "1:193209930119:web:d9216165be9ef6c0bcc322"
-      });
-      const db = getDatabase(app);
-      const snapshot = await get(query(ref(db, 'orders'), limitToLast(20)));
-      const userOrders: any[] = [];
-      snapshot.forEach((child) => {
-        const order = child.val();
-        if (order.userId === profile.userId) userOrders.push(order);
-      });
-      userOrders.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-      setOrders(userOrders);
-    } catch (err) {
-      console.error(err);
-      alert('查詢失敗，請稍後再試');
-    } finally {
-      setIsLoadingOrders(false);
-    }
-  };
-
-  const submitWish = async () => {
-    if (!wishText.trim() || !profile) return;
-    setIsSubmittingWish(true);
-    try {
-      const { getApp, getApps, initializeApp } = await import('firebase/app');
-      const { getDatabase, ref, push, set } = await import('firebase/database');
-      const app = getApps().length ? getApp() : initializeApp({
-        apiKey: "AIzaSyDvzZKr2x3TGeOFZGisKKXjbYH00DLVhKg",
-        authDomain: "omg-menu-5761a.firebaseapp.com",
-        databaseURL: "https://omg-menu-5761a-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "omg-menu-5761a",
-        storageBucket: "omg-menu-5761a.firebasestorage.app",
-        messagingSenderId: "193209930119",
-        appId: "1:193209930119:web:d9216165be9ef6c0bcc322"
-      });
-      const db = getDatabase(app);
-      const wishRef = push(ref(db, 'wishlist'));
-      await set(wishRef, {
-        userId: profile.userId,
-        displayName: profile.displayName,
-        wishText: wishText.trim(),
-        timestamp: Date.now(),
-        status: 'pending'
-      });
-      setWishSuccess(true);
-      setWishText('');
-      setTimeout(() => setWishSuccess(false), 3000);
-    } catch (err) {
-      console.error('許願失敗:', err);
-      alert('許願失敗，請稍後再試');
-    } finally {
-      setIsSubmittingWish(false);
-    }
-  };
-
+  // 載入動畫（保持不變）
   if (status && status.includes('正在初始化')) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f5f2ef', flexDirection: 'column', gap: '20px' }}>
@@ -110,35 +10,49 @@ export default function Home() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f2ef', paddingBottom: '80px', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#f5f2ef', paddingBottom: '80px', fontFamily: 'system-ui, sans-serif', position: 'relative' }}>
+      
+      {/* 👇 頂部 Logo 區（左上方，不在框框內） 👇 */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '12px', 
+        padding: '16px 20px', 
+        background: '#fff', 
+        borderBottom: '1px solid #e8e3de' 
+      }}>
+        <img 
+          src="https://omg-pos-systems.pages.dev/logo1.png" 
+          alt="On My Gelato" 
+          style={{ height: '50px', width: 'auto', objectFit: 'contain', borderRadius: '10px' }} 
+        />
+        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+          <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '0.5px' }}>
+            <span style={{ color: '#009246' }}>On</span>
+            <span style={{ color: '#4a4a4a' }}>My</span>
+            <span style={{ color: '#ce2b37' }}>Gelato</span>
+          </span>
+          <span style={{ fontSize: '12px', fontWeight: 400, color: '#8a7a6e', letterSpacing: '1px' }}>義式冰淇淋專賣店</span>
+        </div>
+      </div>
+
       {/* 主要內容區 */}
-      <div style={{ padding: '16px' }}>
+      <div 
+        key={activeTab} 
+        className="page-transition"
+        style={{ padding: '20px 16px' }}
+      >
         {activeTab === 'home' && (
           <div style={{ textAlign: 'center', marginTop: '40px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '20px' }}>
-              <img
-                src="https://omg-pos-systems.pages.dev/logo1.png"
-                alt="On My Gelato"
-                style={{ height: '60px', width: 'auto', objectFit: 'contain', borderRadius: '10px' }}
-              />
-              <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2, textAlign: 'left' }}>
-                <span style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '0.5px' }}>
-                  <span style={{ color: '#009246' }}>On</span>
-                  <span style={{ color: '#4a4a4a' }}>My</span>
-                  <span style={{ color: '#ce2b37' }}>Gelato</span>
-                </span>
-                <span style={{ fontSize: '14px', fontWeight: 400, color: '#8a7a6e', letterSpacing: '1px' }}>義式冰淇淋專賣店</span>
-              </div>
-            </div>
             {profile && (
               <>
                 <img src={profile.pictureUrl} style={{ width: '80px', height: '80px', borderRadius: '50%', border: '3px solid #e67e4a' }} />
                 <h2 style={{ fontSize: '22px', color: '#2c241e', marginTop: '12px' }}>你好，{profile.displayName}！</h2>
-                <p style={{ color: '#8f8076', fontSize: '14px', marginBottom: '30px' }}>歡迎回來，今天想來點什麼口味</p>
+                <p style={{ color: '#8f8076', fontSize: '14px', marginBottom: '30px' }}>歡迎回來，今天想來點什麼？</p>
               </>
             )}
             <a href="/menu/" style={{ display: 'block', background: '#06C755', color: '#fff', padding: '18px', borderRadius: '50px', fontSize: '18px', fontWeight: 'bold', textDecoration: 'none', boxShadow: '0 8px 20px rgba(6,199,85,0.3)', maxWidth: '300px', margin: '0 auto' }}>
-              查看今日口味｜線上預定
+              🍦 立即點餐
             </a>
           </div>
         )}
@@ -159,7 +73,7 @@ export default function Home() {
         )}
 
         {activeTab === 'member' && (
-          <div style={{ textAlign: 'center', marginTop: '40px' }}>
+          <div style={{ textAlign: 'center', marginTop: '20px' }}>
             {profile && (
               <>
                 <img src={profile.pictureUrl} style={{ width: '100px', height: '100px', borderRadius: '50%', border: '4px solid #e67e4a' }} />
@@ -167,8 +81,9 @@ export default function Home() {
                 <p style={{ color: '#8f8076', fontSize: '13px', marginTop: '4px' }}>會員 ID：{profile.userId.slice(-8)}</p>
               </>
             )}
+            
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '30px', maxWidth: '300px', margin: '30px auto 0' }}>
-             <a 
+              <a 
                 href="https://line.me/R/ti/p/@585fychj" 
                 target="_blank" 
                 rel="noopener noreferrer"
@@ -179,7 +94,20 @@ export default function Home() {
                   boxShadow: '0 4px 12px rgba(230, 126, 74, 0.3)'
                 }}
               >
-                ＯＭＧ!LINE集點卡
+                🎯 前往官方帳號查看集點卡
+              </a>
+
+              <a 
+                href="https://lin.ee/sB558niE" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ display: 'block' }}
+              >
+                <img 
+                  src="https://scdn.line-apps.com/n/line_add_friends/btn/zh-Hant.png" 
+                  alt="加入好友" 
+                  style={{ height: '44px', border: '0', margin: '0 auto' }} 
+                />
               </a>
 
               {/* 許願池功能 */}
@@ -206,25 +134,13 @@ export default function Home() {
                 </button>
                 {wishSuccess && <p style={{ color: '#06C755', textAlign: 'center', marginTop: '8px', fontSize: '14px', fontWeight: 'bold' }}>✅ 許願成功！感謝您的建議。</p>}
               </div>
-              <a
-                href="https://lin.ee/sB558niE"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'block' }}
-              >
-                <img
-                  src="https://scdn.line-apps.com/n/line_add_friends/btn/zh-Hant.png"
-                  alt="加入好友"
-                  style={{ height: '44px', border: '0', margin: '0 auto' }}
-                />
-              </a>
             </div>
           </div>
         )}
       </div>
 
       {/* 底部導航欄 */}
-      <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', borderTop: '1px solid #e8e3de', display: 'flex', justifyContent: 'space-around', padding: '10px 0 20px', boxShadow: '0 -4px 20px rgba(0,0,0,0.05)' }}>
+      <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', borderTop: '1px solid #e8e3de', display: 'flex', justifyContent: 'space-around', padding: '10px 0 20px', boxShadow: '0 -4px 20px rgba(0,0,0,0.05)', zIndex: 1000 }}>
         <button onClick={() => setActiveTab('home')} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'home' ? '#e67e4a' : '#aaa', cursor: 'pointer' }}>
           <span style={{ fontSize: '24px' }}>🏠</span>
           <span style={{ fontSize: '11px', fontWeight: activeTab === 'home' ? 'bold' : 'normal' }}>首頁</span>
@@ -241,4 +157,3 @@ export default function Home() {
 
     </div>
   );
-}
