@@ -1,4 +1,104 @@
-  // 載入動畫（保持不變）
+'use client';
+
+import { useEffect, useState } from 'react';
+import liff from '@line/liff';
+
+export default function Home() {
+  const [profile, setProfile] = useState<any>(null);
+  const [status, setStatus] = useState('正在初始化...');
+  const [activeTab, setActiveTab] = useState('home');
+  const [orders, setOrders] = useState<any[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [wishText, setWishText] = useState('');
+  const [isSubmittingWish, setIsSubmittingWish] = useState(false);
+  const [wishSuccess, setWishSuccess] = useState(false);
+
+  useEffect(() => {
+    const initLiff = async () => {
+      try {
+        await liff.init({ liffId: '2011536222-v4OvTSup' });
+        if (!liff.isLoggedIn()) {
+          liff.login();
+        } else {
+          setStatus('載入中...');
+          const p = await liff.getProfile();
+          setProfile(p);
+          setStatus('');
+        }
+      } catch (err: any) {
+        setStatus('❌ 錯誤：' + (err.message || '未知錯誤'));
+      }
+    };
+    initLiff();
+  }, []);
+
+  const loadOrders = async () => {
+    if (!profile || !profile.userId) return;
+    setIsLoadingOrders(true);
+    try {
+      const { initializeApp } = await import('firebase/app');
+      const { getDatabase, ref, query, limitToLast, get } = await import('firebase/database');
+      const app = initializeApp({
+        apiKey: "AIzaSyDvzZKr2x3TGeOFZGisKKXjbYH00DLVhKg",
+        authDomain: "omg-menu-5761a.firebaseapp.com",
+        databaseURL: "https://omg-menu-5761a-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "omg-menu-5761a",
+        storageBucket: "omg-menu-5761a.firebasestorage.app",
+        messagingSenderId: "193209930119",
+        appId: "1:193209930119:web:d9216165be9ef6c0bcc322"
+      });
+      const db = getDatabase(app);
+      const snapshot = await get(query(ref(db, 'orders'), limitToLast(20)));
+      const userOrders: any[] = [];
+      snapshot.forEach((child) => {
+        const order = child.val();
+        if (order.userId === profile.userId) userOrders.push(order);
+      });
+      userOrders.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+      setOrders(userOrders);
+    } catch (err) {
+      console.error(err);
+      alert('查詢失敗，請稍後再試');
+    } finally {
+      setIsLoadingOrders(false);
+    }
+  };
+
+  const submitWish = async () => {
+    if (!wishText.trim() || !profile) return;
+    setIsSubmittingWish(true);
+    try {
+      const { initializeApp } = await import('firebase/app');
+      const { getDatabase, ref, push, set } = await import('firebase/database');
+      const app = initializeApp({
+        apiKey: "AIzaSyDvzZKr2x3TGeOFZGisKKXjbYH00DLVhKg",
+        authDomain: "omg-menu-5761a.firebaseapp.com",
+        databaseURL: "https://omg-menu-5761a-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "omg-menu-5761a",
+        storageBucket: "omg-menu-5761a.firebasestorage.app",
+        messagingSenderId: "193209930119",
+        appId: "1:193209930119:web:d9216165be9ef6c0bcc322"
+      });
+      const db = getDatabase(app);
+      const wishRef = push(ref(db, 'wishlist'));
+      await set(wishRef, {
+        userId: profile.userId,
+        displayName: profile.displayName,
+        wishText: wishText.trim(),
+        timestamp: Date.now(),
+        status: 'pending'
+      });
+      setWishSuccess(true);
+      setWishText('');
+      setTimeout(() => setWishSuccess(false), 3000);
+    } catch (err) {
+      console.error('許願失敗:', err);
+      alert('許願失敗，請稍後再試');
+    } finally {
+      setIsSubmittingWish(false);
+    }
+  };
+
   if (status && status.includes('正在初始化')) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f5f2ef', flexDirection: 'column', gap: '20px' }}>
@@ -12,7 +112,17 @@
   return (
     <div style={{ minHeight: '100vh', background: '#f5f2ef', paddingBottom: '80px', fontFamily: 'system-ui, sans-serif', position: 'relative' }}>
       
-      {/* 👇 頂部 Logo 區（左上方，不在框框內） 👇 */}
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .page-transition {
+          animation: fadeInUp 0.4s ease-out;
+        }
+      `}</style>
+
+      {/* 頂部 Logo 區（左上方，不在框框內） */}
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
@@ -37,11 +147,7 @@
       </div>
 
       {/* 主要內容區 */}
-      <div 
-        key={activeTab} 
-        className="page-transition"
-        style={{ padding: '20px 16px' }}
-      >
+      <div key={activeTab} className="page-transition" style={{ padding: '20px 16px' }}>
         {activeTab === 'home' && (
           <div style={{ textAlign: 'center', marginTop: '40px' }}>
             {profile && (
@@ -157,3 +263,4 @@
 
     </div>
   );
+}
