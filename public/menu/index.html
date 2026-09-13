@@ -2447,49 +2447,30 @@
             return lines.join('\n');
         }
 
-        async function sendOrderToLine(pickupText) {
+        async         function sendOrderToLine(pickupText) {
             const body = generateOrderText(pickupText);
             if (body === '（尚未選取）') {
                 showToast('請先選取口味', '⚠️');
                 return;
             }
 
-            // 呼叫我們的 API 來自動發送通知
-            let notifyResponse;
-            try {
-                notifyResponse = await fetch('https://my-liff-app-xi.vercel.app/api/notify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        orderText: body,
-                        userId: window.liffUserId || null,
-                        displayName: window.liffDisplayName || null,
-                        pictureUrl: window.liffPictureUrl || null,
-                    }),
-                });
-            } catch (error) {
-                console.error('通知 API 無法連線:', error);
-                showToast('通知服務無法連線，請確認網站 API 網址', '⚠️');
-                return;
-            }
-
-            const notifyResult = await notifyResponse.json().catch(() => null);
-            if (!notifyResponse.ok || !notifyResult?.success) {
-                const errorMessage = notifyResult?.error || `HTTP ${notifyResponse.status} ${notifyResponse.statusText}`;
-                console.error('通知失敗:', errorMessage);
-                showToast(`通知失敗：${errorMessage}`, '⚠️');
-                return;
-            }
-
-            if (notifyResult.warning) {
-                console.warn('客人通知未送出:', notifyResult.warning);
-                showToast('店家已收到卡片，客人通知未送出', '⚠️');
-            }
-
-            const LINE_ID = '@585fychj';
-            const lineUrl = `https://line.me/R/oaMessage/${LINE_ID}/?${encodeURIComponent(body)}`;
-            window.open(lineUrl, '_blank');
-            showToast('已開啟 LINE 官方帳號', '💬');
+            // 呼叫我們的 API 來自動發送通知（加上 keepalive 防止跳轉時中斷）
+            fetch('/api/notify', {
+                method: 'POST',
+                keepalive: true, // 👈 關鍵是這一行
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderText: body,
+                    userId: window.liffUserId || null,
+                    displayName: window.liffDisplayName || null,
+                    pictureUrl: window.liffPictureUrl || null,
+                }),
+            }).then(() => {
+                showToast('訂單已送出，請等待店家確認', '💬');
+            }).catch(err => {
+                console.error('通知失敗:', err);
+                showToast('發送失敗，請稍後再試', '❌');
+            });
         }
 
         // ---- 事件綁定 ----
