@@ -9,7 +9,6 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('home'); // home, orders, member
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
-  const [memberPoints, setMemberPoints] = useState<number | null>(null);
 
   useEffect(() => {
     const initLiff = async () => {
@@ -22,32 +21,6 @@ export default function Home() {
           const p = await liff.getProfile();
           setProfile(p);
           setStatus('');
-
-          // 載入會員點數
-          try {
-            const { getApp, getApps, initializeApp } = await import('firebase/app');
-            const { getDatabase, ref, get } = await import('firebase/database');
-            const app = getApps().length ? getApp() : initializeApp({
-              apiKey: "AIzaSyDvzZKr2x3TGeOFZGisKKXjbYH00DLVhKg",
-              authDomain: "omg-menu-5761a.firebaseapp.com",
-              databaseURL: "https://omg-menu-5761a-default-rtdb.asia-southeast1.firebasedatabase.app",
-              projectId: "omg-menu-5761a",
-              storageBucket: "omg-menu-5761a.firebasestorage.app",
-              messagingSenderId: "193209930119",
-              appId: "1:193209930119:web:d9216165be9ef6c0bcc322"
-            });
-            const db = getDatabase(app);
-            const memberRef = ref(db, 'members/' + p.userId);
-            const snapshot = await get(memberRef);
-            if (snapshot.exists()) {
-              setMemberPoints(snapshot.val().points || 0);
-            } else {
-              setMemberPoints(0);
-            }
-          } catch (err) {
-            console.error('載入點數失敗:', err);
-            setMemberPoints(0);
-          }
         }
       } catch (err: any) {
         setStatus('❌ 錯誤：' + (err.message || '未知錯誤'));
@@ -100,20 +73,6 @@ export default function Home() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f2ef', paddingBottom: '80px', fontFamily: 'system-ui, sans-serif' }}>
-      
-      {/* 頂部 Logo 區 */}
-      <div style={{ padding: '20px 16px 10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <img src="https://omg-pos-systems.pages.dev/logo1.png" alt="Logo" style={{ height: '50px', borderRadius: '10px' }} />
-        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-          <span style={{ fontSize: '18px', fontWeight: 800 }}>
-            <span style={{ color: '#009246' }}>On </span>
-            <span style={{ color: '#4a4a4a' }}>My </span>
-            <span style={{ color: '#ce2b37' }}>Gelato</span>
-          </span>
-          <span style={{ fontSize: '12px', color: '#8a7a6e' }}>義式冰淇淋專賣店</span>
-        </div>
-      </div>
-
       {/* 主要內容區 */}
       <div style={{ padding: '16px' }}>
         {activeTab === 'home' && (
@@ -147,75 +106,41 @@ export default function Home() {
         )}
 
         {activeTab === 'member' && (
-          <div style={{ textAlign: 'center', marginTop: '20px', padding: '0 16px' }}>
+          <div style={{ textAlign: 'center', marginTop: '40px' }}>
             {profile && (
               <>
                 <img src={profile.pictureUrl} style={{ width: '100px', height: '100px', borderRadius: '50%', border: '4px solid #e67e4a' }} />
                 <h2 style={{ fontSize: '24px', color: '#2c241e', marginTop: '16px' }}>{profile.displayName}</h2>
                 <p style={{ color: '#8f8076', fontSize: '13px', marginTop: '4px' }}>會員 ID：{profile.userId.slice(-8)}</p>
-
-                {/* 集點卡 UI 開始 */}
-                <div style={{
-                  marginTop: '24px',
-                  background: 'linear-gradient(135deg, #fff5f0, #ffe8d8)',
-                  borderRadius: '20px',
-                  padding: '24px',
-                  boxShadow: '0 8px 20px rgba(230, 126, 74, 0.15)',
-                  border: '2px dashed #e67e4a'
-                }}>
-                  <h3 style={{ fontSize: '18px', color: '#e67e4a', margin: '0 0 16px 0' }}>🍦 我的集點卡</h3>
-
-                  {/* 點數顯示 */}
-                  <div style={{ fontSize: '48px', fontWeight: '900', color: '#2d1f14', lineHeight: 1 }}>
-                    {memberPoints !== null ? memberPoints : '載入中...'}
-                    <span style={{ fontSize: '16px', color: '#8a7a6e', fontWeight: 'bold', marginLeft: '8px' }}>點</span>
-                  </div>
-
-                  {/* 進度條 */}
-                  <div style={{ marginTop: '16px', background: '#f0ebe6', borderRadius: '30px', height: '12px', overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${Math.min(((memberPoints || 0) / 12) * 100, 100)}%`,
-                      background: 'linear-gradient(90deg, #e67e4a, #f5b84d)',
-                      borderRadius: '30px',
-                      transition: 'width 0.5s ease'
-                    }} />
-                  </div>
-                  <p style={{ fontSize: '13px', color: '#8a7a6e', marginTop: '8px' }}>
-                    再集 {Math.max(12 - (memberPoints || 0), 0)} 點即可兌換一球冰淇淋！
-                  </p>
-                </div>
-
-                {/* 會員短碼（給店家輸入用） */}
-                <div style={{
-                  marginTop: '16px',
-                  background: '#f0ebe6',
-                  borderRadius: '16px',
-                  padding: '12px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <span style={{ fontSize: '14px', color: '#6b5a4a' }}>🔑 會員短碼（給店家輸入）</span>
-                  <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#2d1f14', letterSpacing: '2px' }}>
-                    {profile.userId.slice(-6).toUpperCase()}
-                  </span>
-                </div>
-                {/* 集點卡 UI 結束 */}
               </>
             )}
-            <a
-              href="https://lin.ee/sB558niE"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display: 'inline-block', marginTop: '24px' }}
-            >
-              <img
-                src="https://scdn.line-apps.com/n/line_add_friends/btn/zh-Hant.png"
-                alt="加入好友"
-                style={{ height: '44px', border: '0' }}
-              />
-            </a>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '30px', maxWidth: '300px', margin: '30px auto 0' }}>
+              <a
+                href="https://u.lin.ee/XRtOsue"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'block', background: '#e67e4a', color: '#fff',
+                  padding: '14px 20px', borderRadius: '50px', fontSize: '16px',
+                  fontWeight: 'bold', textDecoration: 'none',
+                  boxShadow: '0 4px 12px rgba(230, 126, 74, 0.3)'
+                }}
+              >
+                🎯 查看官方集點卡
+              </a>
+              <a
+                href="https://lin.ee/sB558niE"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'block' }}
+              >
+                <img
+                  src="https://scdn.line-apps.com/n/line_add_friends/btn/zh-Hant.png"
+                  alt="加入好友"
+                  style={{ height: '44px', border: '0', margin: '0 auto' }}
+                />
+              </a>
+            </div>
           </div>
         )}
       </div>
