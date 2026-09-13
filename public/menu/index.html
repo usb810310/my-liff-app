@@ -2477,6 +2477,7 @@
                     payment: '待確認',
                     remark: `取餐時間：${pickupText}`,
                     source: 'LIFF',
+                    userId: window.liffUserId || null,
                     voided: false
                 }).then(() => {
                     console.log('✅ 訂單已寫入 Firebase（第三方通知已觸發）');
