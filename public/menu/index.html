@@ -2448,31 +2448,38 @@
         }
 
         async         function sendOrderToLine(pickupText) {
-            const body = generateOrderText(pickupText);
-            if (body === '（尚未選取）') {
-                showToast('請先選取口味', '⚠️');
-                return;
-            }
+    const body = generateOrderText(pickupText);
+    if (body === '（尚未選取）') {
+        showToast('請先選取口味', '⚠️');
+        return;
+    }
 
-            // 呼叫我們的 API 來自動發送通知（加上 keepalive 防止跳轉時中斷）
-            fetch('/api/notify', {
-                method: 'POST',
-                keepalive: true, // 👈 關鍵是這一行
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    orderText: body,
-                    userId: window.liffUserId || null,
-                    displayName: window.liffDisplayName || null,
-                    pictureUrl: window.liffPictureUrl || null,
-                }),
-            }).then(() => {
-                showToast('訂單已送出，請等待店家確認', '💬');
-            }).catch(err => {
-                console.error('通知失敗:', err);
-                showToast('發送失敗，請稍後再試', '❌');
-            });
+    // 呼叫我們的 API 來自動發送通知
+    fetch('/api/notify', {
+        method: 'POST',
+        keepalive: true, // 保持連線不中斷
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            orderText: body,
+            userId: window.liffUserId || null,
+            displayName: window.liffDisplayName || null,
+            pictureUrl: window.liffPictureUrl || null,
+        }),
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('訂單已送出，請等待店家確認', '💬');
+        } else {
+            console.error('API 錯誤:', data.error);
+            showToast('發送失敗，請稍後再試', '❌');
         }
-
+    })
+    .catch(err => {
+        console.error('網路錯誤:', err);
+        showToast('網路異常，請檢查連線', '❌');
+    });
+}
         // ---- 事件綁定 ----
         modeDuet.addEventListener('click', () => setActiveMode('duet'));
         modeCup.addEventListener('click', () => setActiveMode('cup'));
