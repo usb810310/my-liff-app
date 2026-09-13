@@ -1646,14 +1646,13 @@
             window.addEventListener('liff-sdk-error', handleError, { once: true });
         });
 
-                if (liff) {
+        if (liff) {
             liff.init({ liffId: '2011536222-v4OvTSup' }).then(() => {
                 if (liff.isLoggedIn()) {
                     liff.getProfile().then(profile => {
                         window.liffUserId = profile.userId;
                         window.liffDisplayName = profile.displayName;
                         window.liffPictureUrl = profile.pictureUrl;
-                        
                     });
                 }
             }).catch(err => console.error('LIFF 初始化失敗:', err));
@@ -2454,7 +2453,7 @@
                 return;
             }
 
-            // 1. 把訂單寫入 Firebase（這是給第三方軟體如 POS 接收的來源）
+            // 1. 把訂單寫入 Firebase（給 POS 接收）
             try {
                 const itemsForFirebase = [];
                 duetPairs.forEach(([a, b]) => {
@@ -2478,7 +2477,7 @@
                     payment: '待確認',
                     remark: `取餐時間：${pickupText}`,
                     source: 'LIFF',
-                    voided: false,
+                    voided: false
                 }).then(() => {
                     console.log('✅ 訂單已寫入 Firebase（第三方通知已觸發）');
                 }).catch(err => {
