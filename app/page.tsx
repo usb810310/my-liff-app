@@ -168,18 +168,18 @@ export default function Home() {
               </>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '30px', maxWidth: '300px', margin: '30px auto 0' }}>
-              <a
-                href="https://u.lin.ee/XRtOsue"
-                target="_blank"
+             <a 
+                href="https://line.me/R/ti/p/@585fychj" 
+                target="_blank" 
                 rel="noopener noreferrer"
-                style={{
-                  display: 'block', background: '#e67e4a', color: '#fff',
-                  padding: '14px 20px', borderRadius: '50px', fontSize: '16px',
+                style={{ 
+                  display: 'block', background: '#e67e4a', color: '#fff', 
+                  padding: '14px 20px', borderRadius: '50px', fontSize: '16px', 
                   fontWeight: 'bold', textDecoration: 'none',
                   boxShadow: '0 4px 12px rgba(230, 126, 74, 0.3)'
                 }}
               >
-                🎯 查看官方集點卡
+                ＯＭＧ!LINE集點卡
               </a>
 
               {/* 許願池功能 */}
