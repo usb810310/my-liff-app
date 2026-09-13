@@ -8,6 +8,9 @@ export default function Home() {
   const [status, setStatus] = useState('正在初始化...');
   const [activeTab, setActiveTab] = useState('home'); // home, orders, member
   const [orders, setOrders] = useState<any[]>([]);
+  const [wishText, setWishText] = useState('');
+  const [isSubmittingWish, setIsSubmittingWish] = useState(false);
+  const [wishSuccess, setWishSuccess] = useState(false);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
 
   useEffect(() => {
@@ -58,6 +61,41 @@ export default function Home() {
       alert('查詢失敗，請稍後再試');
     } finally {
       setIsLoadingOrders(false);
+    }
+  };
+
+  const submitWish = async () => {
+    if (!wishText.trim() || !profile) return;
+    setIsSubmittingWish(true);
+    try {
+      const { getApp, getApps, initializeApp } = await import('firebase/app');
+      const { getDatabase, ref, push, set } = await import('firebase/database');
+      const app = getApps().length ? getApp() : initializeApp({
+        apiKey: "AIzaSyDvzZKr2x3TGeOFZGisKKXjbYH00DLVhKg",
+        authDomain: "omg-menu-5761a.firebaseapp.com",
+        databaseURL: "https://omg-menu-5761a-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "omg-menu-5761a",
+        storageBucket: "omg-menu-5761a.firebasestorage.app",
+        messagingSenderId: "193209930119",
+        appId: "1:193209930119:web:d9216165be9ef6c0bcc322"
+      });
+      const db = getDatabase(app);
+      const wishRef = push(ref(db, 'wishlist'));
+      await set(wishRef, {
+        userId: profile.userId,
+        displayName: profile.displayName,
+        wishText: wishText.trim(),
+        timestamp: Date.now(),
+        status: 'pending'
+      });
+      setWishSuccess(true);
+      setWishText('');
+      setTimeout(() => setWishSuccess(false), 3000);
+    } catch (err) {
+      console.error('許願失敗:', err);
+      alert('許願失敗，請稍後再試');
+    } finally {
+      setIsSubmittingWish(false);
     }
   };
 
@@ -128,6 +166,31 @@ export default function Home() {
               >
                 🎯 查看官方集點卡
               </a>
+
+              {/* 許願池功能 */}
+              <div style={{ marginTop: '24px', background: '#fff', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', textAlign: 'left' }}>
+                <h3 style={{ fontSize: '18px', color: '#2c241e', margin: '0 0 8px 0', textAlign: 'center' }}>⭐ 口味許願池</h3>
+                <p style={{ fontSize: '13px', color: '#8a7a6e', marginBottom: '12px', textAlign: 'center' }}>想吃什麼口味？寫下來，我們會認真評估！</p>
+                <textarea
+                  value={wishText}
+                  onChange={(e) => setWishText(e.target.value)}
+                  placeholder="例如：海鹽焦糖、開心果..."
+                  style={{ width: '100%', minHeight: '80px', padding: '12px', borderRadius: '12px', border: '1px solid #e0d6ce', fontSize: '15px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                />
+                <button
+                  onClick={submitWish}
+                  disabled={isSubmittingWish || !wishText.trim()}
+                  style={{
+                    width: '100%', marginTop: '12px', padding: '14px', borderRadius: '40px', border: 'none',
+                    background: isSubmittingWish || !wishText.trim() ? '#ccc' : '#e67e4a',
+                    color: '#fff', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {isSubmittingWish ? '⏳ 送出中...' : '✨ 送出願望'}
+                </button>
+                {wishSuccess && <p style={{ color: '#06C755', textAlign: 'center', marginTop: '8px', fontSize: '14px', fontWeight: 'bold' }}>✅ 許願成功！感謝您的建議。</p>}
+              </div>
               <a
                 href="https://lin.ee/sB558niE"
                 target="_blank"
