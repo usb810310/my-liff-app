@@ -128,8 +128,7 @@ export default function Home() {
         alignItems: 'center', 
         gap: '12px', 
         padding: '16px 20px', 
-        background: '#fff', 
-        borderBottom: '1px solid #e8e3de' 
+        background: '#f5f2ef'
       }}>
         <img 
           src="https://omg-pos-systems.pages.dev/logo1.png" 
@@ -226,6 +225,21 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', borderTop: '1px solid #e8e3de', display: 'flex', justifyContent: 'space-around', padding: '10px 0 20px', boxShadow: '0 -4px 20px rgba(0,0,0,0.05)' }}>
+        <button onClick={() => setActiveTab('home')} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'home' ? '#e67e4a' : '#aaa', cursor: 'pointer' }}>
+          <span style={{ fontSize: '24px' }}>🏠</span>
+          <span style={{ fontSize: '11px', fontWeight: activeTab === 'home' ? 'bold' : 'normal' }}>首頁</span>
+        </button>
+        <button onClick={() => { setActiveTab('orders'); loadOrders(); }} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'orders' ? '#e67e4a' : '#aaa', cursor: 'pointer' }}>
+          <span style={{ fontSize: '24px' }}>📋</span>
+          <span style={{ fontSize: '11px', fontWeight: activeTab === 'orders' ? 'bold' : 'normal' }}>訂單</span>
+        </button>
+        <button onClick={() => setActiveTab('member')} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'member' ? '#e67e4a' : '#aaa', cursor: 'pointer' }}>
+          <span style={{ fontSize: '24px' }}>👤</span>
+          <span style={{ fontSize: '11px', fontWeight: activeTab === 'member' ? 'bold' : 'normal' }}>會員</span>
+        </button>
+      </nav>
     </div>
   );
 }
