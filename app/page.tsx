@@ -5,23 +5,22 @@ import liff from '@line/liff';
 
 export default function Home() {
   const [profile, setProfile] = useState<any>(null);
-  const [status, setStatus] = useState('正在初始化 LIFF...');
+  const [status, setStatus] = useState('正在初始化...');
+  const [activeTab, setActiveTab] = useState('home'); // home, orders, member
   const [orders, setOrders] = useState<any[]>([]);
-  const [showOrders, setShowOrders] = useState(false);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
 
   useEffect(() => {
     const initLiff = async () => {
       try {
         await liff.init({ liffId: '2011536222-v4OvTSup' });
-        
         if (!liff.isLoggedIn()) {
           liff.login();
         } else {
-          setStatus('已登入，載入資料中...');
+          setStatus('載入中...');
           const p = await liff.getProfile();
           setProfile(p);
-          setStatus('🎉 歡迎！');
+          setStatus('');
         }
       } catch (err: any) {
         setStatus('❌ 錯誤：' + (err.message || '未知錯誤'));
@@ -30,16 +29,13 @@ export default function Home() {
     initLiff();
   }, []);
 
-  // 查詢歷史訂單
   const loadOrders = async () => {
     if (!profile || !profile.userId) return;
     setIsLoadingOrders(true);
     try {
-      // 動態載入 Firebase（避免 Next.js SSR 錯誤）
       const { initializeApp } = await import('firebase/app');
       const { getDatabase, ref, query, limitToLast, get } = await import('firebase/database');
-
-      const firebaseConfig = {
+      const app = initializeApp({
         apiKey: "AIzaSyDvzZKr2x3TGeOFZGisKKXjbYH00DLVhKg",
         authDomain: "omg-menu-5761a.firebaseapp.com",
         databaseURL: "https://omg-menu-5761a-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -47,206 +43,114 @@ export default function Home() {
         storageBucket: "omg-menu-5761a.firebasestorage.app",
         messagingSenderId: "193209930119",
         appId: "1:193209930119:web:d9216165be9ef6c0bcc322"
-      };
-      const app = initializeApp(firebaseConfig);
+      });
       const db = getDatabase(app);
-
-      // 抓取最近 20 筆訂單，在前端過濾出這位客人的訂單（避免需要設定 Firebase 索引）
-      const ordersRef = query(ref(db, 'orders'), limitToLast(20));
-      const snapshot = await get(ordersRef);
-      
+      const snapshot = await get(query(ref(db, 'orders'), limitToLast(20)));
       const userOrders: any[] = [];
       snapshot.forEach((child) => {
         const order = child.val();
-        if (order.userId === profile.userId) {
-          userOrders.push(order);
-        }
+        if (order.userId === profile.userId) userOrders.push(order);
       });
-
-      // 依時間新到舊排序
       userOrders.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
       setOrders(userOrders);
-      setShowOrders(true);
     } catch (err) {
-      console.error('查詢訂單失敗:', err);
-      alert('查詢訂單失敗，請稍後再試');
+      console.error(err);
+      alert('查詢失敗，請稍後再試');
     } finally {
       setIsLoadingOrders(false);
     }
   };
 
+  if (status && status.includes('正在初始化')) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f5f2ef', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ fontSize: '64px', animation: 'spin 1.5s linear infinite' }}>🍨</div>
+        <p style={{ color: '#8f8076', fontSize: '16px' }}>載入中...</p>
+        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
   return (
-    <main style={{ 
-      padding: '20px', 
-      fontFamily: 'sans-serif',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '100vh',
-      background: '#f5f2ef',
-      position: 'relative'
-    }}>
-      {/* Logo 放在左上角 */}
-      <div style={{
-        position: 'absolute',
-        top: '20px',
-        left: '20px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px'
-      }}>
-        <img
-          src="https://omg-pos-systems.pages.dev/logo1.png"
-          alt="On My Gelato"
-          style={{ height: '48px', width: 'auto', objectFit: 'contain', borderRadius: '8px' }}
-        />
-        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1, textAlign: 'left' }}>
-          <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '0.5px' }}>
+    <div style={{ minHeight: '100vh', background: '#f5f2ef', paddingBottom: '80px', fontFamily: 'system-ui, sans-serif' }}>
+      
+      {/* 頂部 Logo 區 */}
+      <div style={{ padding: '20px 16px 10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <img src="https://omg-pos-systems.pages.dev/logo1.png" alt="Logo" style={{ height: '50px', borderRadius: '10px' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+          <span style={{ fontSize: '18px', fontWeight: 800 }}>
             <span style={{ color: '#009246' }}>On</span>
             <span style={{ color: '#4a4a4a' }}>My</span>
             <span style={{ color: '#ce2b37' }}>Gelato</span>
           </span>
-          <span style={{ fontSize: '12px', fontWeight: 400, color: '#8a7a6e', letterSpacing: '1px' }}>義式冰淇淋專賣店</span>
+          <span style={{ fontSize: '12px', color: '#8a7a6e' }}>義式冰淇淋專賣店</span>
         </div>
       </div>
-      <div style={{
-        background: '#fff',
-        borderRadius: '20px',
-        padding: '30px 24px',
-        maxWidth: '400px',
-        width: '100%',
-        textAlign: 'center',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
-      }}>
-        <p style={{ fontSize: '14px', color: '#8f8076', marginBottom: '20px' }}>
-          {status}
-        </p>
 
-        {profile && (
-          <div style={{ marginBottom: '20px' }}>
-            <img 
-              src={profile.pictureUrl} 
-              alt="大頭貼" 
-              style={{ width: '64px', height: '64px', borderRadius: '50%', border: '3px solid #e67e4a' }} 
-            />
-            <p style={{ fontSize: '16px', marginTop: '8px', color: '#2c241e', fontWeight: 'bold' }}>
-              你好，{profile.displayName}！
-            </p>
-            <p style={{ fontSize: '12px', color: '#aaa', marginTop: '4px' }}>
-              會員 ID: {profile.userId.slice(-6)}
-            </p>
+      {/* 主要內容區 */}
+      <div style={{ padding: '16px' }}>
+        {activeTab === 'home' && (
+          <div style={{ textAlign: 'center', marginTop: '40px' }}>
+            {profile && (
+              <>
+                <img src={profile.pictureUrl} style={{ width: '80px', height: '80px', borderRadius: '50%', border: '3px solid #e67e4a' }} />
+                <h2 style={{ fontSize: '22px', color: '#2c241e', marginTop: '12px' }}>你好，{profile.displayName}！</h2>
+                <p style={{ color: '#8f8076', fontSize: '14px', marginBottom: '30px' }}>歡迎回來，今天想來點什麼？</p>
+              </>
+            )}
+            <a href="/menu/" style={{ display: 'block', background: '#06C755', color: '#fff', padding: '18px', borderRadius: '50px', fontSize: '18px', fontWeight: 'bold', textDecoration: 'none', boxShadow: '0 8px 20px rgba(6,199,85,0.3)', maxWidth: '300px', margin: '0 auto' }}>
+              🍦 立即點餐
+            </a>
           </div>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px' }}>
-          <a 
-            href="/menu/" 
-            style={{
-              display: 'block',
-              background: '#06C755',
-              color: '#fff',
-              padding: '14px 20px',
-              borderRadius: '40px',
-              fontSize: '16px',
-              fontWeight: '700',
-              textDecoration: 'none',
-              boxShadow: '0 4px 12px rgba(6, 199, 85, 0.3)'
-            }}
-          >
-            🍦 進入菜單
-          </a>
+        {activeTab === 'orders' && (
+          <div>
+            <h3 style={{ fontSize: '20px', marginBottom: '16px', color: '#2c241e' }}>📋 我的訂單</h3>
+            {isLoadingOrders ? <p>載入中...</p> : orders.length === 0 ? <p style={{ color: '#aaa' }}>目前沒有訂單記錄</p> : orders.map((o, i) => (
+              <div key={i} style={{ background: '#fff', borderRadius: '16px', padding: '16px', marginBottom: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <strong>#{o.orderNo}</strong>
+                  <span style={{ color: '#e67e4a', fontWeight: 'bold' }}>${o.total}</span>
+                </div>
+                <p style={{ fontSize: '13px', color: '#8a7a6e' }}>取餐：{o.remark || '未指定'}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
-          <button 
-            onClick={loadOrders}
-            disabled={isLoadingOrders}
-            style={{
-              display: 'block',
-              width: '100%',
-              background: '#f0ebe6',
-              color: '#2d1f14',
-              padding: '14px 20px',
-              borderRadius: '40px',
-              fontSize: '16px',
-              fontWeight: '700',
-              border: 'none',
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-            }}
-          >
-            {isLoadingOrders ? '⏳ 載入中...' : '📋 查詢歷史訂單'}
-          </button>
-
-          <a 
-            href="https://line.me/R/ti/p/@585fychj"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'block',
-              background: '#fff',
-              color: '#06C755',
-              padding: '14px 20px',
-              borderRadius: '40px',
-              fontSize: '16px',
-              fontWeight: '700',
-              textDecoration: 'none',
-              border: '2px solid #06C755'
-            }}
-          >
-            💚 加入官方好友領優惠
-          </a>
-        </div>
+        {activeTab === 'member' && (
+          <div style={{ textAlign: 'center', marginTop: '40px' }}>
+            {profile && (
+              <>
+                <img src={profile.pictureUrl} style={{ width: '100px', height: '100px', borderRadius: '50%', border: '4px solid #e67e4a' }} />
+                <h2 style={{ fontSize: '24px', color: '#2c241e', marginTop: '16px' }}>{profile.displayName}</h2>
+                <p style={{ color: '#8f8076', fontSize: '13px', marginTop: '4px' }}>會員 ID：{profile.userId.slice(-8)}</p>
+              </>
+            )}
+            <a href="https://line.me/R/ti/p/@585fychj" target="_blank" style={{ display: 'inline-block', marginTop: '30px', background: '#06C755', color: '#fff', padding: '14px 30px', borderRadius: '50px', textDecoration: 'none', fontWeight: 'bold' }}>
+              💚 加入官方好友
+            </a>
+          </div>
+        )}
       </div>
 
-      {/* 歷史訂單彈窗 */}
-      {showOrders && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-          background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 9999, padding: '20px'
-        }}>
-          <div style={{
-            background: '#fff', borderRadius: '24px', padding: '24px',
-            maxWidth: '400px', width: '100%', maxHeight: '80vh',
-            display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '20px', color: '#2c241e', margin: 0 }}>📋 我的歷史訂單</h3>
-              <button 
-                onClick={() => setShowOrders(false)}
-                style={{ background: '#f0ebe6', border: 'none', borderRadius: '50%', width: '36px', height: '36px', fontSize: '18px', cursor: 'pointer', color: '#888' }}
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-              {orders.length === 0 ? (
-                <p style={{ textAlign: 'center', color: '#aaa', padding: '20px' }}>目前沒有歷史訂單</p>
-              ) : (
-                orders.map((order, idx) => (
-                  <div key={idx} style={{
-                    background: '#fcf9f6', borderRadius: '12px', padding: '14px 16px',
-                    marginBottom: '8px', border: '1px solid #f0e8e0'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <strong style={{ fontSize: '16px', color: '#2d1f14' }}>#{order.orderNo}</strong>
-                      <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#e67e4a' }}>${order.total}</span>
-                    </div>
-                    <div style={{ fontSize: '13px', color: '#8a7a6e', marginBottom: '4px' }}>
-                      取餐時間：{order.remark || '未指定'}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#aaa' }}>
-                      {order.items.map((i: any) => `${i.name}×${i.qty}`).join('、')}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </main>
+      {/* 底部導航欄 */}
+      <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', borderTop: '1px solid #e8e3de', display: 'flex', justifyContent: 'space-around', padding: '10px 0 20px', boxShadow: '0 -4px 20px rgba(0,0,0,0.05)' }}>
+        <button onClick={() => setActiveTab('home')} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'home' ? '#e67e4a' : '#aaa', cursor: 'pointer' }}>
+          <span style={{ fontSize: '24px' }}>🏠</span>
+          <span style={{ fontSize: '11px', fontWeight: activeTab === 'home' ? 'bold' : 'normal' }}>首頁</span>
+        </button>
+        <button onClick={() => { setActiveTab('orders'); loadOrders(); }} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'orders' ? '#e67e4a' : '#aaa', cursor: 'pointer' }}>
+          <span style={{ fontSize: '24px' }}>📋</span>
+          <span style={{ fontSize: '11px', fontWeight: activeTab === 'orders' ? 'bold' : 'normal' }}>訂單</span>
+        </button>
+        <button onClick={() => setActiveTab('member')} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'member' ? '#e67e4a' : '#aaa', cursor: 'pointer' }}>
+          <span style={{ fontSize: '24px' }}>👤</span>
+          <span style={{ fontSize: '11px', fontWeight: activeTab === 'member' ? 'bold' : 'normal' }}>會員</span>
+        </button>
+      </nav>
+
+    </div>
   );
 }
