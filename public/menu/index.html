@@ -2447,39 +2447,64 @@
             return lines.join('\n');
         }
 
-        async         function sendOrderToLine(pickupText) {
-    const body = generateOrderText(pickupText);
-    if (body === '（尚未選取）') {
-        showToast('請先選取口味', '⚠️');
-        return;
-    }
+        function sendOrderToLine(pickupText) {
+            const body = generateOrderText(pickupText);
+            if (body === '（尚未選取）') {
+                showToast('請先選取口味', '⚠️');
+                return;
+            }
 
-    // 呼叫我們的 API 來自動發送通知
-    fetch('/api/notify', {
-        method: 'POST',
-        keepalive: true, // 保持連線不中斷
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            orderText: body,
-            userId: window.liffUserId || null,
-            displayName: window.liffDisplayName || null,
-            pictureUrl: window.liffPictureUrl || null,
-        }),
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            showToast('訂單已送出，請等待店家確認', '💬');
-        } else {
-            console.error('API 錯誤:', data.error);
-            showToast('發送失敗，請稍後再試', '❌');
+            // 1. 把訂單寫入 Firebase（這是給第三方軟體如 POS 接收的來源）
+            try {
+                const itemsForFirebase = [];
+                duetPairs.forEach(([a, b]) => {
+                    itemsForFirebase.push({ name: 'OMG雙重奏', price: 120, qty: 1, flavorDisplay: `${a}+${b}` });
+                });
+                for (const [flavor, count] of Object.entries(cupMap)) {
+                    itemsForFirebase.push({ name: 'OMG獨享杯', price: 100, qty: count, flavorDisplay: flavor });
+                }
+                shareBoxes.forEach((box, idx) => {
+                    itemsForFirebase.push({ name: `OMG分享盒 #${idx + 1}`, price: 420, qty: 1, flavorDisplay: box.flavors.join('+') });
+                });
+
+                const total = itemsForFirebase.reduce((sum, item) => sum + item.price * item.qty, 0);
+                const orderRef = push(ref(db, 'orders'));
+                set(orderRef, {
+                    orderNo: 'WEB-' + Date.now().toString().slice(-4),
+                    time: new Date().toISOString(),
+                    date: new Date().toISOString().split('T')[0],
+                    items: itemsForFirebase,
+                    total,
+                    payment: '待確認',
+                    remark: `取餐時間：${pickupText}`,
+                    source: 'LIFF',
+                    voided: false,
+                }).then(() => {
+                    console.log('✅ 訂單已寫入 Firebase（第三方通知已觸發）');
+                }).catch(err => {
+                    console.error('❌ 寫入 Firebase 失敗:', err);
+                });
+            } catch (err) {
+                console.error('❌ 建立 Firebase 訂單失敗:', err);
+            }
+
+            // 2. 呼叫 Vercel API，只發送卡片給「顧客」
+            fetch('https://my-liff-app-xi.vercel.app/api/notify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderText: body,
+                    userId: window.liffUserId || null,
+                    displayName: window.liffDisplayName || null,
+                    pictureUrl: window.liffPictureUrl || null,
+                }),
+            }).then(() => {
+                showToast('訂單已送出，請等待店家確認', '💬');
+            }).catch(err => {
+                console.error('通知失敗:', err);
+                showToast('發送失敗，請稍後再試', '❌');
+            });
         }
-    })
-    .catch(err => {
-        console.error('網路錯誤:', err);
-        showToast('網路異常，請檢查連線', '❌');
-    });
-}
         // ---- 事件綁定 ----
         modeDuet.addEventListener('click', () => setActiveMode('duet'));
         modeCup.addEventListener('click', () => setActiveMode('cup'));
