@@ -84,8 +84,32 @@ export default function Home() {
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: '100vh',
-      background: '#f5f2ef'
+      background: '#f5f2ef',
+      position: 'relative'
     }}>
+      {/* Logo 放在左上角 */}
+      <div style={{
+        position: 'absolute',
+        top: '20px',
+        left: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px'
+      }}>
+        <img
+          src="https://omg-pos-systems.pages.dev/logo1.png"
+          alt="On My Gelato"
+          style={{ height: '48px', width: 'auto', objectFit: 'contain', borderRadius: '8px' }}
+        />
+        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1, textAlign: 'left' }}>
+          <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '0.5px' }}>
+            <span style={{ color: '#009246' }}>On</span>
+            <span style={{ color: '#4a4a4a' }}>My</span>
+            <span style={{ color: '#ce2b37' }}>Gelato</span>
+          </span>
+          <span style={{ fontSize: '12px', fontWeight: 400, color: '#8a7a6e', letterSpacing: '1px' }}>義式冰淇淋專賣店</span>
+        </div>
+      </div>
       <div style={{
         background: '#fff',
         borderRadius: '20px',
@@ -95,21 +119,6 @@ export default function Home() {
         textAlign: 'center',
         boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
       }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '20px' }}>
-          <img 
-            src="https://omg-pos-systems.pages.dev/logo1.png" 
-            alt="On My Gelato" 
-            style={{ height: '60px', width: 'auto', objectFit: 'contain', borderRadius: '10px' }} 
-          />
-          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2, textAlign: 'left' }}>
-            <span style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '0.5px' }}>
-              <span style={{ color: '#009246' }}>On</span>
-              <span style={{ color: '#4a4a4a' }}>My</span>
-              <span style={{ color: '#ce2b37' }}>Gelato</span>
-            </span>
-            <span style={{ fontSize: '14px', fontWeight: 400, color: '#8a7a6e', letterSpacing: '1px' }}>義式冰淇淋專賣店</span>
-          </div>
-        </div>
         <p style={{ fontSize: '14px', color: '#8f8076', marginBottom: '20px' }}>
           {status}
         </p>
