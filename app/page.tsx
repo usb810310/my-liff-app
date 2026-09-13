@@ -95,10 +95,21 @@ export default function Home() {
         textAlign: 'center',
         boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
       }}>
-        <div style={{ fontSize: '48px', marginBottom: '10px' }}>🍨</div>
-        <h1 style={{ fontSize: '24px', color: '#2c241e', marginBottom: '8px' }}>
-          OMG! Gelato
-        </h1>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '20px' }}>
+          <img 
+            src="https://omg-pos-systems.pages.dev/logo1.png" 
+            alt="On My Gelato" 
+            style={{ height: '60px', width: 'auto', objectFit: 'contain', borderRadius: '10px' }} 
+          />
+          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2, textAlign: 'left' }}>
+            <span style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '0.5px' }}>
+              <span style={{ color: '#009246' }}>On</span>
+              <span style={{ color: '#4a4a4a' }}>My</span>
+              <span style={{ color: '#ce2b37' }}>Gelato</span>
+            </span>
+            <span style={{ fontSize: '14px', fontWeight: 400, color: '#8a7a6e', letterSpacing: '1px' }}>義式冰淇淋專賣店</span>
+          </div>
+        </div>
         <p style={{ fontSize: '14px', color: '#8f8076', marginBottom: '20px' }}>
           {status}
         </p>
