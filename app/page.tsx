@@ -115,6 +115,21 @@ export default function Home() {
       <div style={{ padding: '16px' }}>
         {activeTab === 'home' && (
           <div style={{ textAlign: 'center', marginTop: '40px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '20px' }}>
+              <img
+                src="https://omg-pos-systems.pages.dev/logo1.png"
+                alt="On My Gelato"
+                style={{ height: '60px', width: 'auto', objectFit: 'contain', borderRadius: '10px' }}
+              />
+              <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2, textAlign: 'left' }}>
+                <span style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '0.5px' }}>
+                  <span style={{ color: '#009246' }}>On</span>
+                  <span style={{ color: '#4a4a4a' }}>My</span>
+                  <span style={{ color: '#ce2b37' }}>Gelato</span>
+                </span>
+                <span style={{ fontSize: '14px', fontWeight: 400, color: '#8a7a6e', letterSpacing: '1px' }}>義式冰淇淋專賣店</span>
+              </div>
+            </div>
             {profile && (
               <>
                 <img src={profile.pictureUrl} style={{ width: '80px', height: '80px', borderRadius: '50%', border: '3px solid #e67e4a' }} />
