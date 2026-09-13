@@ -79,8 +79,8 @@ export default function Home() {
         <img src="https://omg-pos-systems.pages.dev/logo1.png" alt="Logo" style={{ height: '50px', borderRadius: '10px' }} />
         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
           <span style={{ fontSize: '18px', fontWeight: 800 }}>
-            <span style={{ color: '#009246' }}>On</span>
-            <span style={{ color: '#4a4a4a' }}>My</span>
+            <span style={{ color: '#009246' }}>On </span>
+            <span style={{ color: '#4a4a4a' }}>My </span>
             <span style={{ color: '#ce2b37' }}>Gelato</span>
           </span>
           <span style={{ fontSize: '12px', color: '#8a7a6e' }}>義式冰淇淋專賣店</span>
@@ -95,11 +95,11 @@ export default function Home() {
               <>
                 <img src={profile.pictureUrl} style={{ width: '80px', height: '80px', borderRadius: '50%', border: '3px solid #e67e4a' }} />
                 <h2 style={{ fontSize: '22px', color: '#2c241e', marginTop: '12px' }}>你好，{profile.displayName}！</h2>
-                <p style={{ color: '#8f8076', fontSize: '14px', marginBottom: '30px' }}>歡迎回來，今天想來點什麼？</p>
+                <p style={{ color: '#8f8076', fontSize: '14px', marginBottom: '30px' }}>歡迎回來，今天想來點什麼口味</p>
               </>
             )}
             <a href="/menu/" style={{ display: 'block', background: '#06C755', color: '#fff', padding: '18px', borderRadius: '50px', fontSize: '18px', fontWeight: 'bold', textDecoration: 'none', boxShadow: '0 8px 20px rgba(6,199,85,0.3)', maxWidth: '300px', margin: '0 auto' }}>
-              🍦 立即點餐
+              查看今日口味｜線上預定
             </a>
           </div>
         )}
@@ -128,8 +128,17 @@ export default function Home() {
                 <p style={{ color: '#8f8076', fontSize: '13px', marginTop: '4px' }}>會員 ID：{profile.userId.slice(-8)}</p>
               </>
             )}
-            <a href="https://line.me/R/ti/p/@585fychj" target="_blank" style={{ display: 'inline-block', marginTop: '30px', background: '#06C755', color: '#fff', padding: '14px 30px', borderRadius: '50px', textDecoration: 'none', fontWeight: 'bold' }}>
-              💚 加入官方好友
+                        <a 
+              href="https://lin.ee/sB558niE" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{ display: 'inline-block', marginTop: '30px' }}
+            >
+              <img 
+                src="https://scdn.line-apps.com/n/line_add_friends/btn/zh-Hant.png" 
+                alt="加入好友" 
+                style={{ height: '44px', border: '0' }} 
+              />
             </a>
           </div>
         )}
