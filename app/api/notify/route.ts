@@ -1,5 +1,15 @@
 import { NextResponse } from 'next/server';
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': 'https://omg-gelato79.pages.dev',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+export function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -9,7 +19,10 @@ export async function POST(request: Request) {
     const OWNER_USER_ID = process.env.LINE_OWNER_USER_ID;
 
     if (!CHANNEL_ACCESS_TOKEN || !OWNER_USER_ID) {
-      return NextResponse.json({ success: false, error: 'LINE 環境變數未設定' }, { status: 500 });
+      return NextResponse.json(
+        { success: false, error: 'LINE 環境變數未設定' },
+        { status: 500, headers: corsHeaders },
+      );
     }
 
     // 建立店家端的 Flex Message 卡片
@@ -83,11 +96,17 @@ export async function POST(request: Request) {
     if (!ownerRes.ok) {
       const err = await ownerRes.json().catch(() => ({}));
       console.error('❌ 通知店家失敗:', JSON.stringify(err));
-      return NextResponse.json({ success: false, error: err.message || 'LINE API 錯誤' }, { status: 500 });
+      return NextResponse.json(
+        { success: false, error: err.message || 'LINE API 錯誤' },
+        { status: 500, headers: corsHeaders },
+      );
     }
 
-    return NextResponse.json({ success: true, warning: customerError });
+    return NextResponse.json({ success: true, warning: customerError }, { headers: corsHeaders });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500, headers: corsHeaders },
+    );
   }
 }

@@ -1654,9 +1654,6 @@
                         window.liffDisplayName = profile.displayName;
                         window.liffPictureUrl = profile.pictureUrl;
                         
-                        // 👇 就是這一行！把它加在這裡 👇
-                        alert('你的 User ID 是：\n' + profile.userId);
-                        
                     });
                 }
             }).catch(err => console.error('LIFF 初始化失敗:', err));
@@ -2458,21 +2455,29 @@
             }
 
             // 呼叫我們的 API 來自動發送通知
-            const notifyResponse = await fetch('/api/notify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    orderText: body,
-                    userId: window.liffUserId || null,
-                    displayName: window.liffDisplayName || null,
-                    pictureUrl: window.liffPictureUrl || null,
-                }),
-            });
+            let notifyResponse;
+            try {
+                notifyResponse = await fetch('https://my-liff-app-xi.vercel.app/api/notify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orderText: body,
+                        userId: window.liffUserId || null,
+                        displayName: window.liffDisplayName || null,
+                        pictureUrl: window.liffPictureUrl || null,
+                    }),
+                });
+            } catch (error) {
+                console.error('通知 API 無法連線:', error);
+                showToast('通知服務無法連線，請確認網站 API 網址', '⚠️');
+                return;
+            }
 
             const notifyResult = await notifyResponse.json().catch(() => null);
             if (!notifyResponse.ok || !notifyResult?.success) {
-                console.error('通知失敗:', notifyResult?.error || notifyResponse.statusText);
-                showToast('LINE 卡片通知失敗，請稍後再試', '⚠️');
+                const errorMessage = notifyResult?.error || `HTTP ${notifyResponse.status} ${notifyResponse.statusText}`;
+                console.error('通知失敗:', errorMessage);
+                showToast(`通知失敗：${errorMessage}`, '⚠️');
                 return;
             }
 
