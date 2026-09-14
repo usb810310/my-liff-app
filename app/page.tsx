@@ -130,10 +130,10 @@ export default function Home() {
         padding: '16px 20px', 
         background: '#f5f2ef'
       }}>
-        <img 
-          src="https://omg-pos-systems.pages.dev/logo1.png" 
-          alt="On My Gelato" 
-          style={{ height: '50px', width: 'auto', objectFit: 'contain', borderRadius: '10px' }} 
+                <img 
+          src="/loading-logo.png" 
+          alt="載入中" 
+          style={{ width: '80px', height: '80px', objectFit: 'contain', animation: 'spin 1.5s linear infinite' }} 
         />
         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
           <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '0.5px' }}>
