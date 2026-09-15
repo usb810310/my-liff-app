@@ -103,7 +103,7 @@ export default function Home() {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f5f2ef', flexDirection: 'column', gap: '20px' }}>
         <img
-          src="/loading-logo.png?v=20260915"
+          src="/logo-new.png?v=20260915"
           alt="載入中"
           style={{ width: '80px', height: '80px', objectFit: 'contain', animation: 'spin 1.5s linear infinite' }}
         />
