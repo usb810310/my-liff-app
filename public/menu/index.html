@@ -2446,10 +2446,23 @@
             return lines.join('\n');
         }
 
-        function sendOrderToLine(pickupText) {
+        async function sendOrderToLine(pickupText) {
             const body = generateOrderText(pickupText);
             if (body === '（尚未選取）') {
                 showToast('請先選取口味', '⚠️');
+                return;
+            }
+
+            if (!liff || !liff.isInClient()) {
+                showToast('請在 LINE 應用程式中開啟後再送出', '⚠️');
+                return;
+            }
+
+            try {
+                await liff.sendMessages([{ type: 'text', text: body }]);
+            } catch (err) {
+                console.error('❌ 傳送 LINE 訊息失敗:', err);
+                showToast('發送失敗，請稍後再試', '❌');
                 return;
             }
 
