@@ -734,22 +734,19 @@ backBtn.addEventListener('click', async () => {
   }
 });
 
-/* ---------- 前往訂購頁（新增） ---------- */
-const ORDER_PAGE_URL = '/menu/';  // ← 同網域，留在 LIFF 內
+/* ---------- 前往訂購頁（改用 liff.openWindow） ---------- */
+const ORDER_PAGE_URL = '/menu/';
 
-document.getElementById('goOrderBtn').addEventListener('click', () => {
-  location.href = ORDER_PAGE_URL;
+document.getElementById('goOrderBtn').addEventListener('click', async () => {
+  const url = new URL(ORDER_PAGE_URL, location.href).href;
+  try {
+    if (window.liff && typeof window.liff.openWindow === 'function') {
+      window.liff.openWindow({ url: url, external: false });
+      return;
+    }
+  } catch (e) { /* ignore */ }
+  location.href = url;
 });
-
-document.getElementById('brandLogo')?.addEventListener('error', function () {
-  this.outerHTML = '<span style="font-size:66px;display:block;text-align:center;">🍨</span>';
-});
-
-setSyncStatus('connecting', '連線中');
-setTimeout(checkScrollable, 700);
-updateScrollIndicator();
-
-console.log('🍦 今日口味獨立頁已載入（含訂購按鈕）');
 </script>
 </body>
 </html>
