@@ -3,7 +3,7 @@ import "./globals.css";
 import { LIFFProvider } from "../providers/liff-providers";
 
 export const metadata: Metadata = {
-  title: "LIFF App",
+  title: "omg-gelato79",
   icons: {
     icon: "/favicon.ico",
   },

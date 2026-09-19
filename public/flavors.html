@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#f5f2ef" />
-<title>今日口味 & 店內冰櫃｜OMG! Gelato</title>
+<title>OMG!Gelato Visitor menu</title>
 
 <script type="importmap">
 {
@@ -479,7 +479,7 @@ body {
 <div class="container">
 
   <div class="top-bar">
-    <button class="pill-btn" id="backBtn">← 回菜單</button>
+    <button class="pill-btn" id="backBtn">會員</button>
     <div class="sync-badge" id="syncBadge">
       <span class="indicator connecting" id="indicatorDot"></span>
       <span class="sync-label" id="syncText">連線中</span>
@@ -549,6 +549,17 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+/* ---------- LIFF 初始化（給 liff.openWindow 用） ---------- */
+(function initLiff() {
+  const run = () => {
+    if (!window.liff) return;
+    window.liff.init({ liffId: '2011536222-v4OvTSup' })
+      .then(() => console.log('✅ LIFF 已初始化'))
+      .catch(err => console.warn('LIFF init 失敗:', err));
+  };
+  if (window.liff) run();
+  else window.addEventListener('liff-sdk-ready', run, { once: true });
+})();
 
 const todayGrid       = document.getElementById('todayGrid');
 const todayScroll     = document.getElementById('todayScroll');

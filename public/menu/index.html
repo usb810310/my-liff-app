@@ -1646,13 +1646,14 @@
             window.addEventListener('liff-sdk-error', handleError, { once: true });
         });
 
-        if (liff) {
+                if (liff) {
             liff.init({ liffId: '2011536222-v4OvTSup' }).then(() => {
                 if (liff.isLoggedIn()) {
                     liff.getProfile().then(profile => {
                         window.liffUserId = profile.userId;
                         window.liffDisplayName = profile.displayName;
                         window.liffPictureUrl = profile.pictureUrl;
+                        
                     });
                 }
             }).catch(err => console.error('LIFF 初始化失敗:', err));
@@ -2446,27 +2447,14 @@
             return lines.join('\n');
         }
 
-        async function sendOrderToLine(pickupText) {
+        function sendOrderToLine(pickupText) {
             const body = generateOrderText(pickupText);
             if (body === '（尚未選取）') {
                 showToast('請先選取口味', '⚠️');
                 return;
             }
 
-            if (!liff || !liff.isInClient()) {
-                showToast('請在 LINE 應用程式中開啟後再送出', '⚠️');
-                return;
-            }
-
-            try {
-                await liff.sendMessages([{ type: 'text', text: body }]);
-            } catch (err) {
-                console.error('❌ 傳送 LINE 訊息失敗:', err);
-                showToast('發送失敗，請稍後再試', '❌');
-                return;
-            }
-
-            // 1. 把訂單寫入 Firebase（給 POS 接收）
+            // 1. 把訂單寫入 Firebase（這是給第三方軟體如 POS 接收的來源）
             try {
                 const itemsForFirebase = [];
                 duetPairs.forEach(([a, b]) => {
@@ -2490,8 +2478,7 @@
                     payment: '待確認',
                     remark: `取餐時間：${pickupText}`,
                     source: 'LIFF',
-                    userId: window.liffUserId || null,
-                    voided: false
+                    voided: false,
                 }).then(() => {
                     console.log('✅ 訂單已寫入 Firebase（第三方通知已觸發）');
                 }).catch(err => {
@@ -2502,7 +2489,7 @@
             }
 
             // 2. 呼叫 Vercel API，只發送卡片給「顧客」
-            fetch('https://my-liff-app-xi.vercel.app/api/notify', {
+            fetch('/api/notify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
