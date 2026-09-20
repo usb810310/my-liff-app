@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#f5f2ef" />
-<title>OMG!Gelato Visitor menu</title>
+<title>今日口味 & 店內冰櫃｜OMG! Gelato</title>
 
 <script type="importmap">
 {
@@ -15,6 +15,7 @@
 }
 </script>
 
+<!-- 主題初始化（避免閃白） -->
 <script>
 (function () {
   var stored = localStorage.getItem('omg-theme') || 'light';
@@ -110,8 +111,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  /* 底部預留給訂購按鈕 */
-  padding: 14px 16px calc(110px + env(safe-area-inset-bottom));
+  /* 改回原本的底部留白，因為沒有按鈕了 */
+  padding: 14px 16px calc(40px + env(safe-area-inset-bottom));
   color: var(--text-primary);
   transition: background 0.35s ease, color 0.35s ease;
 }
@@ -370,39 +371,6 @@ body {
   transition: width 0.3s ease;
 }
 
-/* ===== 底部固定訂購按鈕（新增） ===== */
-.order-cta-bar {
-  position: fixed;
-  left: 0; right: 0; bottom: 0;
-  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-  background: linear-gradient(to top, var(--bg-body) 70%, transparent);
-  z-index: 900;
-  display: flex;
-  justify-content: center;
-  pointer-events: none;
-}
-.order-cta-btn {
-  pointer-events: auto;
-  width: 100%;
-  max-width: 460px;
-  padding: 15px 24px;
-  border: none;
-  border-radius: 50px;
-  background: #06C755;
-  color: #fff;
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  box-shadow: 0 6px 20px rgba(6, 199, 85, 0.35);
-  transition: transform 0.15s ease, box-shadow 0.2s ease;
-}
-.order-cta-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(6, 199, 85, 0.45);
-}
-.order-cta-btn:active { transform: scale(0.97); }
-
 /* 底部 */
 .update-time {
   text-align: right;
@@ -464,7 +432,7 @@ body {
 }
 
 @media (max-width: 480px) {
-  body { padding: 10px 12px calc(104px + env(safe-area-inset-bottom)); }
+  body { padding: 10px 12px calc(32px + env(safe-area-inset-bottom)); }
   .brand-logo { width: 62px; height: 62px; }
   .brand-title { font-size: 26px; letter-spacing: 1.5px; }
   .page-title { font-size: 15px; }
@@ -479,7 +447,7 @@ body {
 <div class="container">
 
   <div class="top-bar">
-    <button class="pill-btn" id="backBtn">會員</button>
+    <button class="pill-btn" id="backBtn">← 回菜單</button>
     <div class="sync-badge" id="syncBadge">
       <span class="indicator connecting" id="indicatorDot"></span>
       <span class="sync-label" id="syncText">連線中</span>
@@ -522,11 +490,6 @@ body {
   <div class="footer">©2026 OMG!Gelato·口味同步系統供查看，實際以現場供應為準</div>
 </div>
 
-<!-- ===== 底部固定訂購按鈕（新增） ===== -->
-<div class="order-cta-bar">
-  <button class="order-cta-btn" id="goOrderBtn">🛒 我要線上預訂</button>
-</div>
-
 <script
   id="liff-sdk"
   src="https://static.line-scdn.net/liff/edge/2/sdk.js"
@@ -549,7 +512,8 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-/* ---------- LIFF 初始化（給 liff.openWindow 用） ---------- */
+
+/* ---------- LIFF 初始化（給關閉視窗用） ---------- */
 (function initLiff() {
   const run = () => {
     if (!window.liff) return;
@@ -730,6 +694,7 @@ onValue(ref(db, 'globalOverlay'), (snap) => {
   }
 });
 
+/* ---------- 返回按鈕 ---------- */
 backBtn.addEventListener('click', async () => {
   try {
     if (window.liff && typeof window.liff.isInClient === 'function' && window.liff.isInClient()) {
@@ -745,19 +710,15 @@ backBtn.addEventListener('click', async () => {
   }
 });
 
-/* ---------- 前往訂購頁（改用 liff.openWindow） ---------- */
-const ORDER_PAGE_URL = '/menu/';
-
-document.getElementById('goOrderBtn').addEventListener('click', async () => {
-  const url = new URL(ORDER_PAGE_URL, location.href).href;
-  try {
-    if (window.liff && typeof window.liff.openWindow === 'function') {
-      window.liff.openWindow({ url: url, external: false });
-      return;
-    }
-  } catch (e) { /* ignore */ }
-  location.href = url;
+document.getElementById('brandLogo')?.addEventListener('error', function () {
+  this.outerHTML = '<span style="font-size:66px;display:block;text-align:center;">🍨</span>';
 });
+
+setSyncStatus('connecting', '連線中');
+setTimeout(checkScrollable, 700);
+updateScrollIndicator();
+
+console.log('🍦 今日口味獨立頁已載入（無訂購按鈕）');
 </script>
 </body>
 </html>
