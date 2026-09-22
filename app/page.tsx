@@ -17,7 +17,62 @@ type Order = {
   total?: string | number;
   remark?: string;
   time?: string;
+  date?: string;
+  status?: string;
+  payment?: string;
+  voided?: boolean;
+  items?: OrderItem[];
 };
+
+function getPaymentStatus(order: Order) {
+  if (order.voided || order.payment === '已取消') return '已取消';
+  if (order.payment === '已付款' || order.payment === 'paid' || order.payment === '已確認') return '已付款';
+  if (order.payment === '付款處理中' || order.payment === 'processing') return '付款處理中';
+  if (order.payment === '付款失敗' || order.payment === 'failed') return '付款失敗';
+  return '尚未付款';
+}
+
+type OrderItem = {
+  name?: string;
+  price?: number;
+  qty?: number;
+  flavorDisplay?: string;
+};
+
+function getOrderStatus(order: Order) {
+  if (order.voided) return '已取消';
+  const status = order.status || order.payment;
+  if (status === 'confirmed' || status === '已確認') return '已確認';
+  if (status === 'preparing' || status === '製作中') return '製作中';
+  if (status === 'ready' || status === '可取餐') return '可取餐';
+  if (status === 'completed' || status === '已完成') return '已完成';
+  if (status === 'cancelled' || status === '已取消') return '已取消';
+  if (status === '待確認' || status === 'pending') return '待確認';
+  return status || '已送出';
+}
+
+function formatOrderDate(order: Order) {
+  const rawDate = order.time || order.date;
+  if (!rawDate) return '日期未提供';
+  const date = new Date(rawDate);
+  if (Number.isNaN(date.getTime())) return order.date || rawDate;
+  return new Intl.DateTimeFormat('zh-TW', {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
+function formatOrderItems(items?: OrderItem[]) {
+  if (!items?.length) return ['品項明細請洽店家確認'];
+  return items.map((item) => {
+    const quantity = item.qty && item.qty > 1 ? ` × ${item.qty}` : '';
+    const flavor = item.flavorDisplay ? ` · ${item.flavorDisplay}` : '';
+    return `${item.name || '冰淇淋品項'}${quantity}${flavor}`;
+  });
+}
 
 const firebaseConfig = {
   apiKey: 'AIzaSyDvzZKr2x3TGeOFZGisKKXjbYH00DLVhKg',
@@ -43,6 +98,7 @@ export default function Home() {
   const [wishText, setWishText] = useState('');
   const [isSubmittingWish, setIsSubmittingWish] = useState(false);
   const [wishSuccess, setWishSuccess] = useState(false);
+  const [payingOrderNo, setPayingOrderNo] = useState<string | number | null>(null);
 
   useEffect(() => {
     const initLiff = async () => {
@@ -110,6 +166,34 @@ export default function Home() {
   const switchTab = (tab: 'home' | 'orders' | 'member') => {
     setActiveTab(tab);
     if (tab === 'orders') loadOrders();
+  };
+
+  const startLinePay = async (order: Order) => {
+    if (!order.orderNo || !profile?.userId || payingOrderNo) return;
+    setPayingOrderNo(order.orderNo);
+    try {
+      const response = await fetch('/api/linepay/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: profile.userId,
+          displayName: profile.displayName,
+          orderNo: order.orderNo,
+          amount: Number(order.total || 0),
+          items: order.items || [],
+          remark: order.remark || '',
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.paymentUrl) {
+        throw new Error(result.error || 'LINE Pay 付款服務尚未完成設定');
+      }
+      window.location.href = result.paymentUrl;
+    } catch (err) {
+      console.error('LINE Pay 付款請求失敗:', err);
+      alert(err instanceof Error ? err.message : 'LINE Pay 付款失敗，請稍後再試');
+      setPayingOrderNo(null);
+    }
   };
 
   if (status.includes('正在初始化')) {
@@ -183,7 +267,12 @@ export default function Home() {
         {activeTab === 'orders' && (
           <section className={styles.pageView}>
             <div className={styles.sectionHeading}><div><p className={styles.kicker}>YOUR SWEET MOMENTS</p><h1>我的訂單</h1></div><span className={styles.headingIcon}>▤</span></div>
-            {isLoadingOrders ? <div className={styles.emptyState}><span className={styles.loadingDot} /><p>正在找回你的甜蜜紀錄…</p></div> : orders.length === 0 ? <div className={styles.emptyState}><span className={styles.emptyEmoji}>○</span><h3>還沒有訂單</h3><p>今天就選一個喜歡的口味吧！</p><a href="/menu/" className={styles.secondaryButton}>前往今日口味</a></div> : <div className={styles.orderList}>{orders.map((order, index) => <article key={`${order.orderNo}-${index}`} className={styles.orderCard}><div><span className={styles.orderLabel}>ORDER</span><h3>#{order.orderNo ?? '—'}</h3><p>取餐：{order.remark || '未指定'}</p></div><strong>${order.total ?? 0}</strong></article>)}</div>}
+            {isLoadingOrders ? <div className={styles.emptyState}><span className={styles.loadingDot} /><p>正在找回你的甜蜜紀錄…</p></div> : orders.length === 0 ? <div className={styles.emptyState}><span className={styles.emptyEmoji}>○</span><h3>還沒有訂單</h3><p>今天就選一個喜歡的口味吧！</p><a href="/menu/" className={styles.secondaryButton}>前往今日口味</a></div> : <div className={styles.orderList}>{orders.map((order, index) => <article key={`${order.orderNo}-${index}`} className={styles.orderCard}>
+              <div className={styles.orderTopline}><span className={styles.orderLabel}>ORDER · {formatOrderDate(order)}</span><span className={`${styles.orderStatus} ${order.voided ? styles.orderStatusCancelled : ''}`}>{getOrderStatus(order)}</span></div>
+              <div className={styles.orderMain}><div><h3>#{order.orderNo ?? '—'}</h3><p className={styles.pickupText}>{order.remark || '取餐時間未指定'}</p></div><strong>${order.total ?? 0}</strong></div>
+              <div className={styles.orderDetails}><span className={styles.detailLabel}>品項摘要</span><ul>{formatOrderItems(order.items).map((item, itemIndex) => <li key={`${item}-${itemIndex}`}>{item}</li>)}</ul></div>
+              <div className={styles.paymentRow}><span>LINE Pay <b>{getPaymentStatus(order)}</b></span>{getPaymentStatus(order) === '尚未付款' && !order.voided && <button className={styles.linePayButton} onClick={() => startLinePay(order)} disabled={payingOrderNo === order.orderNo}>{payingOrderNo === order.orderNo ? '前往付款中…' : '使用 LINE Pay'}</button>}</div>
+            </article>)}</div>}
           </section>
         )}
 

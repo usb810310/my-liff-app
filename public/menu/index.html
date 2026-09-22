@@ -2471,6 +2471,8 @@
                 const orderRef = push(ref(db, 'orders'));
                 set(orderRef, {
                     orderNo: 'WEB-' + Date.now().toString().slice(-4),
+                    userId: window.liffUserId || null,
+                    displayName: window.liffDisplayName || null,
                     time: new Date().toISOString(),
                     date: new Date().toISOString().split('T')[0],
                     items: itemsForFirebase,

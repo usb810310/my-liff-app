@@ -31,3 +31,25 @@
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } } @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } } @keyframes pulse { 0%,100% { opacity: .35; transform: scale(.8); } 50% { opacity: 1; transform: scale(1); } }
 @media (min-width: 700px) { .appShell { max-width: 520px; margin: 0 auto; box-shadow: 0 0 45px rgba(53,42,31,.08); } body { background: #eee9df; } }
 @media (prefers-reduced-motion: reduce) { .content, .loadingLogo, .loadingDot { animation: none; } :global(*) { scroll-behavior: auto !important; } }
+
+.orderCard { display: block; padding: 16px 17px; }
+.orderTopline { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.orderStatus { flex: 0 0 auto; padding: 5px 9px; border-radius: 20px; background: #e5efe0; color: #52734f; font-size: 10px; font-weight: 800; }
+.orderStatusCancelled { background: #f8e3df; color: #b1564c; }
+.orderMain { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
+.orderMain h3 { margin: 0 0 6px; }
+.orderMain > strong { color: var(--red); font-size: 19px; }
+.pickupText { max-width: 220px; }
+.orderDetails { margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e6dbcc; }
+.detailLabel { display: block; margin-bottom: 7px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .08em; }
+.orderDetails ul { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.orderDetails li { color: #5f574e; font-size: 11px; line-height: 1.45; }
+.orderDetails li::before { content: '✦'; margin-right: 6px; color: var(--orange); font-size: 9px; }
+@media (max-width: 370px) { .orderTopline { align-items: flex-start; flex-direction: column; gap: 6px; } .pickupText { max-width: 180px; } }
+
+.paymentRow { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #f0e7db; color: var(--muted); font-size: 11px; }
+.paymentRow b { margin-left: 5px; color: #a87342; font-weight: 800; }
+.linePayButton { border: 0; border-radius: 20px; padding: 8px 11px; background: #06c755; color: #fff; font-size: 10px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 10px rgba(6,199,85,.18); transition: transform .16s ease, opacity .16s ease; }
+.linePayButton:active { transform: scale(.97); }
+.linePayButton:disabled { opacity: .55; cursor: wait; }
+@media (max-width: 370px) { .paymentRow { align-items: flex-start; flex-direction: column; } .linePayButton { width: 100%; } }
