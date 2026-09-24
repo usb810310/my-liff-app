@@ -1,17 +1,9 @@
-html,
-body {
-  padding: 0;
-  margin: 0;
-  height: 100%;
-  overflow: hidden;
-  overscroll-behavior: none;
-}
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap');
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+:root { --font-body: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 
-* {
-  box-sizing: border-box;
-}
+html, body { padding: 0; margin: 0; min-height: 100%; background: #eee9df; }
+body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+* { box-sizing: border-box; }
+a { color: inherit; text-decoration: none; }
+button, textarea { font-family: inherit; }

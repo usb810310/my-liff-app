@@ -2,16 +2,103 @@
 
 import { useEffect, useState } from 'react';
 import liff from '@line/liff';
+import { getApp, getApps, initializeApp } from 'firebase/app';
+import { getDatabase, get, limitToLast, push, query, ref, set } from 'firebase/database';
+import styles from './page.module.css';
+
+type Profile = {
+  userId: string;
+  displayName: string;
+  pictureUrl?: string;
+};
+
+type Order = {
+  orderNo?: string | number;
+  total?: string | number;
+  remark?: string;
+  time?: string;
+  date?: string;
+  status?: string;
+  payment?: string;
+  voided?: boolean;
+  items?: OrderItem[];
+};
+
+function getPaymentStatus(order: Order) {
+  if (order.voided || order.payment === '已取消') return '已取消';
+  if (order.payment === '已付款' || order.payment === 'paid' || order.payment === '已確認') return '已付款';
+  if (order.payment === '付款處理中' || order.payment === 'processing') return '付款處理中';
+  if (order.payment === '付款失敗' || order.payment === 'failed') return '付款失敗';
+  return '尚未付款';
+}
+
+type OrderItem = {
+  name?: string;
+  price?: number;
+  qty?: number;
+  flavorDisplay?: string;
+};
+
+function getOrderStatus(order: Order) {
+  if (order.voided) return '已取消';
+  const status = order.status || order.payment;
+  if (status === 'confirmed' || status === '已確認') return '已確認';
+  if (status === 'preparing' || status === '製作中') return '製作中';
+  if (status === 'ready' || status === '可取餐') return '可取餐';
+  if (status === 'completed' || status === '已完成') return '已完成';
+  if (status === 'cancelled' || status === '已取消') return '已取消';
+  if (status === '待確認' || status === 'pending') return '待確認';
+  return status || '已送出';
+}
+
+function formatOrderDate(order: Order) {
+  const rawDate = order.time || order.date;
+  if (!rawDate) return '日期未提供';
+  const date = new Date(rawDate);
+  if (Number.isNaN(date.getTime())) return order.date || rawDate;
+  return new Intl.DateTimeFormat('zh-TW', {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
+function formatOrderItems(items?: OrderItem[]) {
+  if (!items?.length) return ['品項明細請洽店家確認'];
+  return items.map((item) => {
+    const quantity = item.qty && item.qty > 1 ? ` × ${item.qty}` : '';
+    const flavor = item.flavorDisplay ? ` · ${item.flavorDisplay}` : '';
+    return `${item.name || '冰淇淋品項'}${quantity}${flavor}`;
+  });
+}
+
+const firebaseConfig = {
+  apiKey: 'AIzaSyDvzZKr2x3TGeOFZGisKKXjbYH00DLVhKg',
+  authDomain: 'omg-menu-5761a.firebaseapp.com',
+  databaseURL: 'https://omg-menu-5761a-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'omg-menu-5761a',
+  storageBucket: 'omg-menu-5761a.firebasestorage.app',
+  messagingSenderId: '193209930119',
+  appId: '1:193209930119:web:d9216165be9ef6c0bcc322',
+};
+
+function getGelatoDatabase() {
+  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  return getDatabase(app);
+}
 
 export default function Home() {
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [status, setStatus] = useState('正在初始化...');
-  const [activeTab, setActiveTab] = useState('home');
-  const [orders, setOrders] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'home' | 'orders' | 'member'>('home');
+  const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [wishText, setWishText] = useState('');
   const [isSubmittingWish, setIsSubmittingWish] = useState(false);
   const [wishSuccess, setWishSuccess] = useState(false);
+  const [payingOrderNo, setPayingOrderNo] = useState<string | number | null>(null);
 
   useEffect(() => {
     const initLiff = async () => {
@@ -19,42 +106,31 @@ export default function Home() {
         await liff.init({ liffId: '2011536222-v4OvTSup' });
         if (!liff.isLoggedIn()) {
           liff.login();
-        } else {
-          setStatus('載入中...');
-          const p = await liff.getProfile();
-          setProfile(p);
-          setStatus('');
+          return;
         }
-      } catch (err: any) {
-        setStatus('❌ 錯誤：' + (err.message || '未知錯誤'));
+        setStatus('載入中...');
+        const p = await liff.getProfile();
+        setProfile(p);
+        setStatus('');
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : '未知錯誤';
+        setStatus(`❌ ${message}`);
       }
     };
     initLiff();
   }, []);
 
   const loadOrders = async () => {
-    if (!profile || !profile.userId) return;
+    if (!profile?.userId) return;
     setIsLoadingOrders(true);
     try {
-      const { initializeApp } = await import('firebase/app');
-      const { getDatabase, ref, query, limitToLast, get } = await import('firebase/database');
-      const app = initializeApp({
-        apiKey: "AIzaSyDvzZKr2x3TGeOFZGisKKXjbYH00DLVhKg",
-        authDomain: "omg-menu-5761a.firebaseapp.com",
-        databaseURL: "https://omg-menu-5761a-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "omg-menu-5761a",
-        storageBucket: "omg-menu-5761a.firebasestorage.app",
-        messagingSenderId: "193209930119",
-        appId: "1:193209930119:web:d9216165be9ef6c0bcc322"
-      });
-      const db = getDatabase(app);
-      const snapshot = await get(query(ref(db, 'orders'), limitToLast(20)));
-      const userOrders: any[] = [];
+      const snapshot = await get(query(ref(getGelatoDatabase(), 'orders'), limitToLast(20)));
+      const userOrders: Order[] = [];
       snapshot.forEach((child) => {
-        const order = child.val();
+        const order = child.val() as Order & { userId?: string };
         if (order.userId === profile.userId) userOrders.push(order);
       });
-      userOrders.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+      userOrders.sort((a, b) => new Date(b.time ?? 0).getTime() - new Date(a.time ?? 0).getTime());
       setOrders(userOrders);
     } catch (err) {
       console.error(err);
@@ -68,29 +144,17 @@ export default function Home() {
     if (!wishText.trim() || !profile) return;
     setIsSubmittingWish(true);
     try {
-      const { initializeApp } = await import('firebase/app');
-      const { getDatabase, ref, push, set } = await import('firebase/database');
-      const app = initializeApp({
-        apiKey: "AIzaSyDvzZKr2x3TGeOFZGisKKXjbYH00DLVhKg",
-        authDomain: "omg-menu-5761a.firebaseapp.com",
-        databaseURL: "https://omg-menu-5761a-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "omg-menu-5761a",
-        storageBucket: "omg-menu-5761a.firebasestorage.app",
-        messagingSenderId: "193209930119",
-        appId: "1:193209930119:web:d9216165be9ef6c0bcc322"
-      });
-      const db = getDatabase(app);
-      const wishRef = push(ref(db, 'wishlist'));
+      const wishRef = push(ref(getGelatoDatabase(), 'wishlist'));
       await set(wishRef, {
         userId: profile.userId,
         displayName: profile.displayName,
         wishText: wishText.trim(),
         timestamp: Date.now(),
-        status: 'pending'
+        status: 'pending',
       });
       setWishSuccess(true);
       setWishText('');
-      setTimeout(() => setWishSuccess(false), 3000);
+      window.setTimeout(() => setWishSuccess(false), 3000);
     } catch (err) {
       console.error('許願失敗:', err);
       alert('許願失敗，請稍後再試');
@@ -99,154 +163,131 @@ export default function Home() {
     }
   };
 
-  if (status && status.includes('正在初始化')) {
+  const switchTab = (tab: 'home' | 'orders' | 'member') => {
+    setActiveTab(tab);
+    if (tab === 'orders') loadOrders();
+  };
+
+  const startLinePay = async (order: Order) => {
+    if (!order.orderNo || !profile?.userId || payingOrderNo) return;
+    setPayingOrderNo(order.orderNo);
+    try {
+      const response = await fetch('/api/linepay/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: profile.userId,
+          displayName: profile.displayName,
+          orderNo: order.orderNo,
+          amount: Number(order.total || 0),
+          items: order.items || [],
+          remark: order.remark || '',
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.paymentUrl) {
+        throw new Error(result.error || 'LINE Pay 付款服務尚未完成設定');
+      }
+      window.location.href = result.paymentUrl;
+    } catch (err) {
+      console.error('LINE Pay 付款請求失敗:', err);
+      alert(err instanceof Error ? err.message : 'LINE Pay 付款失敗，請稍後再試');
+      setPayingOrderNo(null);
+    }
+  };
+
+  if (status.includes('正在初始化')) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f5f2ef', flexDirection: 'column', gap: '20px' }}>
-        <img
-          src="/logo-new.jpg?v=20260915"
-          alt="載入中"
-          style={{ width: '80px', height: '80px', objectFit: 'contain', animation: 'spin 1.5s linear infinite' }}
-        />
-        <p style={{ color: '#8f8076', fontSize: '16px' }}>載入中...</p>
-        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-      </div>
+      <main className={styles.loadingScreen}>
+        <div className={styles.loadingLogo}><img src="/logo-new.png" alt="On My Gelato" /></div>
+        <span className={styles.loadingDot} />
+        <p>正在準備今天的冰淇淋</p>
+      </main>
     );
   }
 
   return (
-    <div style={{ height: '100dvh', overflow: 'hidden', background: '#f5f2ef', fontFamily: 'system-ui, sans-serif', position: 'relative' }}>
-      
-      <style>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .page-transition {
-          animation: fadeInUp 0.4s ease-out;
-        }
-      `}</style>
-
-      {/* 頂部 Logo 區（左上方，不在框框內） */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '12px', 
-        padding: '16px 20px', 
-        background: '#f5f2ef'
-      }}>
-        <img 
-          src="https://omg-pos-systems.pages.dev/logo1.png" 
-          alt="On My Gelato" 
-          style={{ height: '50px', width: 'auto', objectFit: 'contain', borderRadius: '10px' }} 
-        />
-        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-          <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '0.5px' }}>
-            <span style={{ color: '#009246' }}>On </span>
-            <span style={{ color: '#4a4a4a' }}>My </span>
-            <span style={{ color: '#ce2b37' }}>Gelato</span>
-          </span>
-          <span style={{ fontSize: '12px', fontWeight: 400, color: '#8a7a6e', letterSpacing: '1px' }}> 義式冰淇淋 專賣店</span>
+    <main className={styles.appShell}>
+      <header className={styles.topbar}>
+        <div className={styles.brandLockup}>
+          <img src="/logo-new.png" alt="On My Gelato" className={styles.brandLogo} />
+          <div>
+            <p className={styles.eyebrow}>ARTISAN GELATO</p>
+            <p className={styles.brandName}><span>On</span> My <b>Gelato</b></p>
+          </div>
         </div>
-      </div>
+        <span className={styles.livePill}><i /> 今日營業中</span>
+      </header>
 
-          {/* 👇 主要內容區（重新包上白色卡片） 👇 */}
-      <div 
-        key={activeTab} 
-        className="page-transition"
-        style={{ 
-          padding: '20px 16px',
-          height: 'calc(100dvh - 100px)',
-          overflowY: 'auto',
-          overscrollBehavior: 'contain',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'flex-start'
-        }}
-      >
-        <div style={{
-          background: '#fff',
-          borderRadius: '20px',
-          padding: '30px 24px',
-          maxWidth: '400px',
-          width: '100%',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-          marginTop: '20px'
-        }}>
-          {activeTab === 'home' && (
-            <div style={{ textAlign: 'center' }}>
-              {profile && (
-                <>
-                  <img src={profile.pictureUrl} style={{ width: '80px', height: '80px', borderRadius: '50%', border: '3px solid #e67e4a' }} />
-                  <h2 style={{ fontSize: '22px', color: '#2c241e', marginTop: '12px' }}>你好，{profile.displayName}！</h2>
-                  <p style={{ color: '#8f8076', fontSize: '14px', marginBottom: '30px' }}>歡迎回來，今天想來點什麼口味呢？</p>
-                </>
-              )}
-              <a href="/menu/" style={{ display: 'block', background: '#06C755', color: '#fff', padding: '18px', borderRadius: '50px', fontSize: '18px', fontWeight: 'bold', textDecoration: 'none', boxShadow: '0 8px 20px rgba(6,199,85,0.3)' }}>
-                查看今日口味｜線上立即訂購
-              </a>
-            </div>
-          )}
+      <section className={styles.content} key={activeTab}>
+        {status && !profile && <div className={styles.errorBanner}>{status}</div>}
 
-          {activeTab === 'orders' && (
-            <div>
-              <h3 style={{ fontSize: '20px', marginBottom: '16px', color: '#2c241e', textAlign: 'center' }}>📋 我的訂單</h3>
-              {isLoadingOrders ? <p style={{ textAlign: 'center' }}>載入中...</p> : orders.length === 0 ? <p style={{ color: '#aaa', textAlign: 'center' }}>目前沒有訂單記錄</p> : orders.map((o, i) => (
-                <div key={i} style={{ background: '#fcf9f6', borderRadius: '16px', padding: '16px', marginBottom: '12px', border: '1px solid #f0e8e0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <strong>#{o.orderNo}</strong>
-                    <span style={{ color: '#e67e4a', fontWeight: 'bold' }}>${o.total}</span>
-                  </div>
-                  <p style={{ fontSize: '13px', color: '#8a7a6e' }}>取餐：{o.remark || '未指定'}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {activeTab === 'member' && (
-            <div style={{ textAlign: 'center' }}>
-              {profile && (
-                <>
-                  <img src={profile.pictureUrl} style={{ width: '100px', height: '100px', borderRadius: '50%', border: '4px solid #e67e4a' }} />
-                  <h2 style={{ fontSize: '24px', color: '#2c241e', marginTop: '16px' }}>{profile.displayName}</h2>
-                  <p style={{ color: '#8f8076', fontSize: '13px', marginTop: '4px' }}>會員 ID：{profile.userId.slice(-8)}</p>
-                </>
-              )}
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '30px' }}>
-                <a href="https://lin.ee/sB558niE" target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
-                  <img src="https://scdn.line-apps.com/n/line_add_friends/btn/zh-Hant.png" alt="加入好友" style={{ height: '44px', border: '0', margin: '0 auto' }} />
-                </a>
-
-                {/* 許願池功能 */}
-                <div style={{ marginTop: '24px', background: '#fcf9f6', borderRadius: '20px', padding: '20px', border: '1px solid #f0e8e0', textAlign: 'left' }}>
-                  <h3 style={{ fontSize: '18px', color: '#2c241e', margin: '0 0 8px 0', textAlign: 'center' }}>⭐ 口味許願池</h3>
-                  <p style={{ fontSize: '13px', color: '#8a7a6e', marginBottom: '12px', textAlign: 'center' }}>想吃什麼口味？寫下來，我們會認真評估！</p>
-                  <textarea value={wishText} onChange={(e) => setWishText(e.target.value)} placeholder="例如：海鹽焦糖、開心果..." style={{ width: '100%', minHeight: '80px', padding: '12px', borderRadius: '12px', border: '1px solid #e0d6ce', fontSize: '15px', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
-                  <button onClick={submitWish} disabled={isSubmittingWish || !wishText.trim()} style={{ width: '100%', marginTop: '12px', padding: '14px', borderRadius: '40px', border: 'none', background: isSubmittingWish || !wishText.trim() ? '#ccc' : '#e67e4a', color: '#fff', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}>
-                    {isSubmittingWish ? '⏳ 送出中...' : '✨ 送出願望'}
-                  </button>
-                  {wishSuccess && <p style={{ color: '#06C755', textAlign: 'center', marginTop: '8px', fontSize: '14px', fontWeight: 'bold' }}>✅ 許願成功！感謝您的建議。</p>}
-                </div>
+        {activeTab === 'home' && (
+          <div className={styles.homeView}>
+            <section className={styles.heroCard}>
+              <div className={styles.heroCopy}>
+                <p className={styles.kicker}>BUON GIORNO, GELATO LOVER</p>
+                <h1>今天，<br /><em>想來一球</em>什麼？</h1>
+                <p className={styles.heroDescription}>每天新鮮製作，讓一口冰涼的義式風味，替今天留下一點甜。</p>
+                <a className={styles.primaryButton} href="/menu/">探索今日口味 <span>↗</span></a>
               </div>
-            </div>
-          )}
-        </div>
-      </div>
+              <div className={styles.heroArt} aria-hidden="true">
+                <div className={styles.sunShape} />
+                <div className={`${styles.scoop} ${styles.scoopPistachio}`} />
+                <div className={`${styles.scoop} ${styles.scoopStrawberry}`} />
+                <div className={styles.cone}><span /></div>
+                <span className={styles.artLabel}>FRESH<br />EVERY DAY</span>
+              </div>
+            </section>
 
-      <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', borderTop: '1px solid #e8e3de', display: 'flex', justifyContent: 'space-around', padding: '10px 0 20px', boxShadow: '0 -4px 20px rgba(0,0,0,0.05)' }}>
-        <button onClick={() => setActiveTab('home')} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'home' ? '#e67e4a' : '#aaa', cursor: 'pointer' }}>
-          <span style={{ fontSize: '24px' }}>🏠</span>
-          <span style={{ fontSize: '11px', fontWeight: activeTab === 'home' ? 'bold' : 'normal' }}>首頁</span>
-        </button>
-        <button onClick={() => { setActiveTab('orders'); loadOrders(); }} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'orders' ? '#e67e4a' : '#aaa', cursor: 'pointer' }}>
-          <span style={{ fontSize: '24px' }}>📋</span>
-          <span style={{ fontSize: '11px', fontWeight: activeTab === 'orders' ? 'bold' : 'normal' }}>訂單</span>
-        </button>
-        <button onClick={() => setActiveTab('member')} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'member' ? '#e67e4a' : '#aaa', cursor: 'pointer' }}>
-          <span style={{ fontSize: '24px' }}>👤</span>
-          <span style={{ fontSize: '11px', fontWeight: activeTab === 'member' ? 'bold' : 'normal' }}>會員</span>
-        </button>
+            <section className={styles.welcomeRow}>
+              <div className={styles.avatarWrap}>
+                {profile?.pictureUrl ? <img src={profile.pictureUrl} alt="會員頭像" /> : <span>OG</span>}
+              </div>
+              <div>
+                <p className={styles.miniLabel}>WELCOME BACK</p>
+                <h2>{profile ? `${profile.displayName}，歡迎回來` : '歡迎來到 On My Gelato'}</h2>
+              </div>
+              <span className={styles.sparkle}>✦</span>
+            </section>
+
+            <div className={styles.quickGrid}>
+              <a href="/menu/" className={`${styles.quickCard} ${styles.greenCard}`}><span className={styles.quickIcon}>✦</span><span><b>今日口味</b><small>立即點餐</small></span><strong>↗</strong></a>
+              <button onClick={() => switchTab('orders')} className={`${styles.quickCard} ${styles.creamCard}`}><span className={styles.quickIcon}>▤</span><span><b>我的訂單</b><small>查看取餐進度</small></span><strong>›</strong></button>
+            </div>
+
+            <section className={styles.noteCard}>
+              <span className={styles.noteMark}>“</span>
+              <p>真正的義式冰淇淋，<br /><b>不只是一種甜。</b></p>
+              <span className={styles.noteCaption}>— MADE WITH PASSION</span>
+            </section>
+          </div>
+        )}
+
+        {activeTab === 'orders' && (
+          <section className={styles.pageView}>
+            <div className={styles.sectionHeading}><div><p className={styles.kicker}>YOUR SWEET MOMENTS</p><h1>我的訂單</h1></div><span className={styles.headingIcon}>▤</span></div>
+            {isLoadingOrders ? <div className={styles.emptyState}><span className={styles.loadingDot} /><p>正在找回你的甜蜜紀錄…</p></div> : orders.length === 0 ? <div className={styles.emptyState}><span className={styles.emptyEmoji}>○</span><h3>還沒有訂單</h3><p>今天就選一個喜歡的口味吧！</p><a href="/menu/" className={styles.secondaryButton}>前往今日口味</a></div> : <div className={styles.orderList}>{orders.map((order, index) => <article key={`${order.orderNo}-${index}`} className={styles.orderCard}>
+              <div className={styles.orderTopline}><span className={styles.orderLabel}>ORDER · {formatOrderDate(order)}</span><span className={`${styles.orderStatus} ${order.voided ? styles.orderStatusCancelled : ''}`}>{getOrderStatus(order)}</span></div>
+              <div className={styles.orderMain}><div><h3>#{order.orderNo ?? '—'}</h3><p className={styles.pickupText}>{order.remark || '取餐時間未指定'}</p></div><strong>${order.total ?? 0}</strong></div>
+              <div className={styles.orderDetails}><span className={styles.detailLabel}>品項摘要</span><ul>{formatOrderItems(order.items).map((item, itemIndex) => <li key={`${item}-${itemIndex}`}>{item}</li>)}</ul></div>
+              <div className={styles.paymentRow}><span>LINE Pay <b>{getPaymentStatus(order)}</b></span>{getPaymentStatus(order) === '尚未付款' && !order.voided && <button className={styles.linePayButton} onClick={() => startLinePay(order)} disabled={payingOrderNo === order.orderNo}>{payingOrderNo === order.orderNo ? '前往付款中…' : '使用 LINE Pay'}</button>}</div>
+            </article>)}</div>}
+          </section>
+        )}
+
+        {activeTab === 'member' && (
+          <section className={styles.pageView}>
+            <div className={styles.memberHero}><div className={styles.memberAvatar}>{profile?.pictureUrl ? <img src={profile.pictureUrl} alt="會員頭像" /> : <span>OG</span>}</div><p className={styles.kicker}>GELATO CLUB MEMBER</p><h1>{profile?.displayName || 'Gelato Lover'}</h1><p className={styles.memberId}>ID · {profile?.userId?.slice(-8) || 'WELCOME'}</p></div>
+            <a href="https://lin.ee/sB558niE" target="_blank" rel="noopener noreferrer" className={styles.lineButton}><span>LINE</span> 加入好友，接收最新口味 <b>↗</b></a>
+            <div className={styles.wishCard}><div className={styles.wishHeading}><span>✦</span><div><p className={styles.kicker}>TASTE LAB</p><h2>口味許願池</h2></div></div><p>下一球，也許就是你最想吃的那一球。</p><textarea value={wishText} onChange={(e) => setWishText(e.target.value)} placeholder="例如：海鹽焦糖、開心果…" /><button onClick={submitWish} disabled={isSubmittingWish || !wishText.trim()} className={styles.wishButton}>{isSubmittingWish ? '送出中…' : '送出我的願望 ✦'}</button>{wishSuccess && <p className={styles.successMessage}>✓ 收到了！謝謝你的口味提案。</p>}</div>
+          </section>
+        )}
+      </section>
+
+      <nav className={styles.bottomNav} aria-label="主要導覽">
+        {([['home', '⌂', '首頁'], ['orders', '▤', '訂單'], ['member', '○', '會員']] as const).map(([tab, icon, label]) => <button key={tab} onClick={() => switchTab(tab)} className={activeTab === tab ? styles.activeNav : ''}><span>{icon}</span><small>{label}</small></button>)}
       </nav>
-    </div>
+    </main>
   );
 }

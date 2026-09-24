@@ -2566,6 +2566,8 @@
                 const orderRef = push(ref(db, 'orders'));
                 await set(orderRef, {
                     orderNo,
+                    userId: window.liffUserId || null,
+                    displayName: window.liffDisplayName || null,
                     time: new Date().toISOString(),
                     date: new Date().toISOString().split('T')[0],
                     items: itemsForFirebase,
