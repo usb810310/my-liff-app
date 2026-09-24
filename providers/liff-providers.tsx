@@ -28,7 +28,10 @@ function LIFFProvider({ children }: { children: React.ReactNode }) {
       .then((liff) => {
         console.log("LIFF init...");
         liff
-          .init({ liffId: process.env.NEXT_PUBLIC_LIFF_ID! })
+          .init({
+            liffId: process.env.NEXT_PUBLIC_LIFF_ID!,
+            withLoginOnExternalBrowser: false, // 關鍵：避免外部瀏覽器被強制跳去登入
+          })
           .then(() => {
             console.log("LIFF init succeeded.");
             setLiffObject(liff);

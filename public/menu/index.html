@@ -1661,8 +1661,8 @@
             console.error('LIFF SDK 載入失敗，將略過使用者通知');
         }
 
-        import { initializeApp } from 'firebase/app';
-        import { getDatabase, ref, onValue, push, set } from 'firebase/database';
+        import { initializeApp, getApp, getApps } from 'firebase/app';
+        import { getDatabase, ref, onValue, push, set, get } from 'firebase/database';
 
         const firebaseConfig = {
             apiKey: "AIzaSyDvzZKr2x3TGeOFZGisKKXjbYH00DLVhKg",
@@ -1673,8 +1673,8 @@
             messagingSenderId: "193209930119",
             appId: "1:193209930119:web:d9216165be9ef6c0bcc322"
         };
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+        const db = getDatabase(firebaseApp);
 
         // DOM
         const todayGrid = document.getElementById('todayGrid'),
@@ -1737,6 +1737,94 @@
 
         let selectedDate = 'today';
         let selectedSlot = null;
+        let currentMember = { memberNo: null, phone: null, memberKey: null, memberType: null };
+
+        function createMemberNo() {
+            const stamp = Date.now().toString(36).toUpperCase();
+            const random = Math.random().toString(36).slice(2, 6).toUpperCase();
+            return `OMG-${stamp}-${random}`;
+        }
+
+        function getSafeMemberKey() {
+            const lineUserId = window.liffUserId;
+            if (lineUserId) return `line_${String(lineUserId).replace(/[^A-Za-z0-9_-]/g, '')}`;
+            let guestId = localStorage.getItem('omg-guest-id');
+            if (!guestId) {
+                guestId = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`);
+                localStorage.setItem('omg-guest-id', guestId);
+            }
+            return `guest_${guestId.replace(/[^A-Za-z0-9_-]/g, '')}`;
+        }
+
+        function normalizePhone(value) {
+            const digits = String(value || '').replace(/[^0-9]/g, '');
+            if (/^09\d{8}$/.test(digits)) return digits;
+            if (/^8869\d{8}$/.test(digits)) return `0${digits.slice(2)}`;
+            return null;
+        }
+
+        async function ensureMemberProfile() {
+            const memberKey = getSafeMemberKey();
+            const memberRef = ref(db, `members/${memberKey}`);
+            const snapshot = await get(memberRef);
+            const existing = snapshot.exists() ? snapshot.val() : null;
+            const memberNo = existing?.memberNo || createMemberNo();
+            const memberType = window.liffUserId ? 'line' : 'guest';
+            const profile = {
+                memberNo,
+                memberKey,
+                memberType,
+                lineUserId: window.liffUserId || null,
+                displayName: window.liffDisplayName || existing?.displayName || null,
+                pictureUrl: window.liffPictureUrl || existing?.pictureUrl || null,
+                phone: existing?.phone || null,
+                createdAt: existing?.createdAt || Date.now(),
+                updatedAt: Date.now(),
+            };
+            await set(memberRef, profile);
+            currentMember = profile;
+            return profile;
+        }
+
+        async function ensureGuestPhone(profile) {
+            if (profile.phone) return profile;
+            const input = window.prompt('為了方便查詢訂單，請輸入手機號碼（09xxxxxxxx）：', '');
+            const phone = normalizePhone(input);
+            if (!phone) throw new Error('請輸入正確的手機號碼');
+            const updated = { ...profile, phone, updatedAt: Date.now() };
+            await set(ref(db, `members/${profile.memberKey}`), updated);
+            currentMember = updated;
+            return updated;
+        }
+        let isSubmittingOrder = false;
+        const ORDER_SUBMIT_LOCK_KEY = 'omg-order-submit-lock';
+        const ORDER_SUBMIT_LOCK_MS = 15000;
+
+        function setOrderSubmitting(submitting) {
+            isSubmittingOrder = submitting;
+            if (sendLineBtn) {
+                sendLineBtn.disabled = submitting;
+                sendLineBtn.style.opacity = submitting ? '0.55' : '';
+                sendLineBtn.style.pointerEvents = submitting ? 'none' : '';
+            }
+            if (pickupModalConfirm) {
+                pickupModalConfirm.disabled = submitting || selectedSlot === null;
+                pickupModalConfirm.textContent = submitting ? '送出中…' : '確認取餐';
+            }
+        }
+
+        function hasRecentOrderSubmitLock() {
+            const lockedAt = Number(sessionStorage.getItem(ORDER_SUBMIT_LOCK_KEY) || 0);
+            return lockedAt > 0 && Date.now() - lockedAt < ORDER_SUBMIT_LOCK_MS;
+        }
+
+        function createOrderSubmitLock() {
+            sessionStorage.setItem(ORDER_SUBMIT_LOCK_KEY, String(Date.now()));
+        }
+
+        function clearOrderSubmitLock() {
+            sessionStorage.removeItem(ORDER_SUBMIT_LOCK_KEY);
+        }
 
         const PRICE_MAP = { duet: 120, cup: 100, share: 420 };
         let duetPairs = [],
@@ -1988,16 +2076,18 @@
             });
         });
 
-        pickupModalConfirm.addEventListener('click', () => {
-            if (pickupModalConfirm.disabled) return;
+        pickupModalConfirm.addEventListener('click', async () => {
+            if (pickupModalConfirm.disabled || isSubmittingOrder || hasRecentOrderSubmitLock()) return;
             if (selectedSlot === null) {
                 pickupError.textContent = '請選擇時段';
                 return;
             }
+            createOrderSubmitLock();
+            setOrderSubmitting(true);
             closePickupModal();
             const dateStr = selectedDate === 'today' ? '今天' : '明天';
             const pickupText = `${dateStr} ${selectedSlot}`;
-            sendOrderToLine(pickupText);
+            await sendOrderToLine(pickupText);
         });
 
         pickupModalCancel.addEventListener('click', closePickupModal);
@@ -2266,13 +2356,13 @@
             updateOrderDisplay();
         }
 
-        function clearAll() {
+        function clearAll(showMessage = true) {
             duetPairs = [];
             cupMap = {};
             shareBoxes = [];
             pendingDuetFlavor = null;
             updateOrderDisplay();
-            showToast('已清空', '🧹');
+            if (showMessage) showToast('已清空', '🧹');
         }
 
         function updateOrderDisplay() {
@@ -2447,15 +2537,19 @@
             return lines.join('\n');
         }
 
-        function sendOrderToLine(pickupText) {
+        async function sendOrderToLine(pickupText) {
             const body = generateOrderText(pickupText);
             if (body === '（尚未選取）') {
+                clearOrderSubmitLock();
+                setOrderSubmitting(false);
                 showToast('請先選取口味', '⚠️');
                 return;
             }
 
-            // 1. 把訂單寫入 Firebase（這是給第三方軟體如 POS 接收的來源）
             try {
+                let memberProfile = await ensureMemberProfile();
+                if (!window.liffUserId) memberProfile = await ensureGuestPhone(memberProfile);
+
                 const itemsForFirebase = [];
                 duetPairs.forEach(([a, b]) => {
                     itemsForFirebase.push({ name: 'OMG雙重奏', price: 120, qty: 1, flavorDisplay: `${a}+${b}` });
@@ -2468,43 +2562,60 @@
                 });
 
                 const total = itemsForFirebase.reduce((sum, item) => sum + item.price * item.qty, 0);
+                const orderNo = 'WEB-' + Date.now().toString(36).slice(-7).toUpperCase();
                 const orderRef = push(ref(db, 'orders'));
-                set(orderRef, {
-                    orderNo: 'WEB-' + Date.now().toString().slice(-4),
+                await set(orderRef, {
+                    orderNo,
                     time: new Date().toISOString(),
                     date: new Date().toISOString().split('T')[0],
                     items: itemsForFirebase,
                     total,
                     payment: '待確認',
                     remark: `取餐時間：${pickupText}`,
-                    source: 'LIFF',
+                    source: window.liffUserId ? 'LIFF' : 'WEB_GUEST',
                     voided: false,
-                }).then(() => {
-                    console.log('✅ 訂單已寫入 Firebase（第三方通知已觸發）');
-                }).catch(err => {
-                    console.error('❌ 寫入 Firebase 失敗:', err);
+                    status: 'pending',
+                    memberNo: memberProfile.memberNo,
+                    memberKey: memberProfile.memberKey,
+                    phone: memberProfile.phone || null,
+                    memberType: memberProfile.memberType,
+                    userId: memberProfile.lineUserId || null,
+                    displayName: memberProfile.displayName || null,
+                    pictureUrl: memberProfile.pictureUrl || null,
                 });
-            } catch (err) {
-                console.error('❌ 建立 Firebase 訂單失敗:', err);
-            }
 
-            // 2. 呼叫 Vercel API，只發送卡片給「顧客」
-            fetch('/api/notify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    orderText: body,
-                    userId: window.liffUserId || null,
-                    displayName: window.liffDisplayName || null,
-                    pictureUrl: window.liffPictureUrl || null,
-                }),
-            }).then(() => {
-                showToast('訂單已送出，請等待店家確認', '💬');
-            }).catch(err => {
-                console.error('通知失敗:', err);
+                const response = await fetch('/api/notify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orderText: body,
+                        orderNo,
+                        memberNo: memberProfile.memberNo,
+                        phone: memberProfile.phone || null,
+                        userId: memberProfile.lineUserId || null,
+                        displayName: memberProfile.displayName || null,
+                        pictureUrl: window.liffPictureUrl || null,
+                    }),
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || result.success === false || result.warning) {
+                    throw new Error(result.error || result.warning || `通知失敗（HTTP ${response.status}）`);
+                }
+
+                clearAll(false);
+                showToast('訂單已送出，購物車已清空', '✅');
+                window.setTimeout(() => {
+                    window.location.assign('/');
+                }, 1800);
+            } catch (err) {
+                console.error('訂單送出失敗:', err);
                 showToast('發送失敗，請稍後再試', '❌');
-            });
+            } finally {
+                clearOrderSubmitLock();
+                setOrderSubmitting(false);
+            }
         }
+
         // ---- 事件綁定 ----
         modeDuet.addEventListener('click', () => setActiveMode('duet'));
         modeCup.addEventListener('click', () => setActiveMode('cup'));
