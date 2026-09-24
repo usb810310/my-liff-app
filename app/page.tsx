@@ -99,26 +99,39 @@ export default function Home() {
   const [isSubmittingWish, setIsSubmittingWish] = useState(false);
   const [wishSuccess, setWishSuccess] = useState(false);
   const [payingOrderNo, setPayingOrderNo] = useState<string | number | null>(null);
+  const [initAttempt, setInitAttempt] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
     const initLiff = async () => {
+      setStatus('正在初始化...');
       try {
-        await liff.init({ liffId: '2011536222-v4OvTSup' });
+        await Promise.race([
+          liff.init({ liffId: '2011536222-v4OvTSup' }),
+          new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error('連線逾時，請確認網路後重試')), 10000)),
+        ]);
         if (!liff.isLoggedIn()) {
+          if (!cancelled) setStatus('請從 LINE 開啟此頁面以完成登入');
           liff.login();
           return;
         }
+        if (cancelled) return;
         setStatus('載入中...');
         const p = await liff.getProfile();
+        if (cancelled) return;
         setProfile(p);
         setStatus('');
       } catch (err: unknown) {
+        if (cancelled) return;
         const message = err instanceof Error ? err.message : '未知錯誤';
-        setStatus(`❌ ${message}`);
+        setStatus(message);
       }
     };
     initLiff();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [initAttempt]);
 
   const loadOrders = async () => {
     if (!profile?.userId) return;
@@ -168,6 +181,11 @@ export default function Home() {
     if (tab === 'orders') loadOrders();
   };
 
+  const retryLiff = () => {
+    setProfile(null);
+    setInitAttempt((attempt) => attempt + 1);
+  };
+
   const startLinePay = async (order: Order) => {
     if (!order.orderNo || !profile?.userId || payingOrderNo) return;
     setPayingOrderNo(order.orderNo);
@@ -196,12 +214,27 @@ export default function Home() {
     }
   };
 
-  if (status.includes('正在初始化')) {
+  if (!profile && (status.includes('正在初始化') || status === '載入中...')) {
     return (
       <main className={styles.loadingScreen}>
         <div className={styles.loadingLogo}><img src="/logo-new.png" alt="On My Gelato" /></div>
         <span className={styles.loadingDot} />
         <p>正在準備今天的冰淇淋</p>
+      </main>
+    );
+  }
+
+  if (!profile && status) {
+    return (
+      <main className={styles.loadingScreen}>
+        <div className={styles.loadingLogo}><img src="/logo-new.png" alt="On My Gelato" /></div>
+        <div className={styles.initErrorCard}>
+          <p className={styles.initErrorKicker}>PLEASE TRY AGAIN</p>
+          <h1>頁面暫時無法載入</h1>
+          <p>{status}</p>
+          <button type="button" className={styles.retryButton} onClick={retryLiff}>重新載入</button>
+          <button type="button" className={styles.reloadButton} onClick={() => window.location.reload()}>重新整理頁面</button>
+        </div>
       </main>
     );
   }
@@ -266,7 +299,7 @@ export default function Home() {
 
         {activeTab === 'orders' && (
           <section className={styles.pageView}>
-            <div className={styles.sectionHeading}><div><p className={styles.kicker}>YOUR SWEET MOMENTS</p><h1>我的訂單</h1></div><span className={styles.headingIcon}>▤</span></div>
+            <div className={styles.sectionHeading}><div><p className={styles.kicker}>YOUR SWEET MOMENTS</p><h1>我的訂單</h1></div><button type="button" className={styles.refreshButton} onClick={loadOrders} disabled={isLoadingOrders} aria-label="重新整理訂單">{isLoadingOrders ? '…' : '↻'}</button></div>
             {isLoadingOrders ? <div className={styles.emptyState}><span className={styles.loadingDot} /><p>正在找回你的甜蜜紀錄…</p></div> : orders.length === 0 ? <div className={styles.emptyState}><span className={styles.emptyEmoji}>○</span><h3>還沒有訂單</h3><p>今天就選一個喜歡的口味吧！</p><a href="/menu/" className={styles.secondaryButton}>前往今日口味</a></div> : <div className={styles.orderList}>{orders.map((order, index) => <article key={`${order.orderNo}-${index}`} className={styles.orderCard}>
               <div className={styles.orderTopline}><span className={styles.orderLabel}>ORDER · {formatOrderDate(order)}</span><span className={`${styles.orderStatus} ${order.voided ? styles.orderStatusCancelled : ''}`}>{getOrderStatus(order)}</span></div>
               <div className={styles.orderMain}><div><h3>#{order.orderNo ?? '—'}</h3><p className={styles.pickupText}>{order.remark || '取餐時間未指定'}</p></div><strong>${order.total ?? 0}</strong></div>
