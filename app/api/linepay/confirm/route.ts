@@ -47,6 +47,21 @@ export async function GET(request: Request) {
     return NextResponse.redirect(returnUrl);
   } catch (error) {
     console.error('LINE Pay confirm failed:', error);
+    if (orderNo) {
+      try {
+        const failedOrder = await findOrderByNo(orderNo);
+        if (failedOrder && failedOrder.payment !== '已付款') {
+          await updateOrder(failedOrder, {
+            payment: '付款失敗',
+            status: '付款失敗',
+            linePayError: error instanceof Error ? error.message : '付款確認失敗',
+            paymentFailedAt: new Date().toISOString(),
+          });
+        }
+      } catch (updateError) {
+        console.error('Failed to update failed payment status:', updateError);
+      }
+    }
     returnUrl.searchParams.set('payment', 'failed');
     returnUrl.searchParams.set('message', error instanceof Error ? error.message : '付款確認失敗');
     return NextResponse.redirect(returnUrl);
