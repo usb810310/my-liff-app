@@ -203,10 +203,13 @@ export default function Home() {
         }),
       });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok || !result.paymentUrl) {
+      if (!response.ok || (!result.appPaymentUrl && !result.webPaymentUrl && !result.paymentUrl)) {
         throw new Error(result.error || 'LINE Pay 付款服務尚未完成設定');
       }
-      window.location.href = result.paymentUrl;
+      const paymentUrl = liff.isInClient()
+        ? result.appPaymentUrl || result.webPaymentUrl || result.paymentUrl
+        : result.webPaymentUrl || result.appPaymentUrl || result.paymentUrl;
+      window.location.href = paymentUrl;
     } catch (err) {
       console.error('LINE Pay 付款請求失敗:', err);
       alert(err instanceof Error ? err.message : 'LINE Pay 付款失敗，請稍後再試');
