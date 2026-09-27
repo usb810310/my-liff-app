@@ -1466,12 +1466,12 @@
             </button>
         </div>
 
-        <div class="brand-sub-title" id="todaySectionTitle">🪧今日口味 & 店內冰櫃🪧</div>
+        <div class="brand-sub-title" id="todaySectionTitle">🪧今日口味查看 & 同步店內冰櫃🪧</div>
 
         <!-- ===== ✨開始訂購 & 模擬試用✨口味 ===== -->
         <div class="today-section" id="todaySection">
             <div class="section-header">
-                <div class="scroll-indicator"><span class="hint-text"><span class="arrow">店內冰櫃同步顯示網路</span> → 口味左右滑動查看更多<span class="arrow">→</span></span><div class="track"><div class="fill" id="scrollFill"></div></div></div>
+                <div class="scroll-indicator"><span class="hint-text"><span class="arrow">→ 左右滑動查看更多口味</span><span class="arrow">→</span></span><div class="track"><div class="fill" id="scrollFill"></div></div></div>
             </div>
             <div class="today-scroll-wrapper">
                 <div class="finger-swipe" id="fingerSwipe">⬅️👆➡️</div>
@@ -2515,11 +2515,10 @@
                 return '（尚未選取）';
             }
 
-            lines.push('⚠️新的訂單店家確認中⚠️');
+                        lines.push(' 𝕚 您的訂單配置如下');
             if (pickupText) {
-                lines.push(`取貨時間：${pickupText}`);
+                lines.push(`取貨時間⋯⋯：${pickupText}`);
             }
-            lines.push(`。。總額。$。${total}。。`);
             lines.push('');
             for (let i = 0; i < itemLines.length; i++) {
                 const line = itemLines[i];
@@ -2527,10 +2526,8 @@
                 lines.push(line);
             }
             lines.push('');
-            lines.push('❌訂單未送出請立即傳送▶️');
-            lines.push('(1)傳送完敬請等待店家回覆');
-            lines.push('(2)等待確認店家有回覆訊息');
-            lines.push('(3)店家有回覆您訂單即成立');
+            lines.push(`訂單總額$${total}`);
+            lines.push('');
 
             while (lines.length > 0 && lines[0] === '') lines.shift();
             while (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
