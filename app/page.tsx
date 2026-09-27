@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import liff from '@line/liff';
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getDatabase, get, limitToLast, onValue, push, query, ref, set } from 'firebase/database';
@@ -142,6 +142,7 @@ export default function Home() {
   const [wishSuccess, setWishSuccess] = useState(false);
   const [payingOrderNo, setPayingOrderNo] = useState<string | number | null>(null);
   const [initAttempt, setInitAttempt] = useState(0);
+  const autoPayStarted = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -274,6 +275,21 @@ export default function Home() {
       setPayingOrderNo(null);
     }
   };
+
+  useEffect(() => {
+    if (!profile?.userId || !orders.length) return;
+    const params = new URLSearchParams(window.location.search);
+    const orderNo = params.get('orderNo');
+    const action = params.get('action');
+    if (!orderNo) return;
+    const targetOrder = orders.find((order) => String(order.orderNo) === orderNo);
+    if (!targetOrder) return;
+    setActiveTab('orders');
+    if (action === 'pay' && !autoPayStarted.current && ['尚未付款', '付款失敗'].includes(getPaymentStatus(targetOrder))) {
+      autoPayStarted.current = true;
+      void startLinePay(targetOrder);
+    }
+  }, [profile?.userId, orders]);
 
   if (!profile && (status.includes('正在初始化') || status === '載入中...')) {
     return (

@@ -18,6 +18,10 @@ export async function POST(request: Request) {
     const customerPickupNumber = pickupNumber || pickupNo || '待分配';
 
     const CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+    const liveOrderUrl = new URL(getLiffReturnUrl());
+    liveOrderUrl.searchParams.set('orderNo', String(orderNo || ''));
+    const paymentUrl = new URL(liveOrderUrl);
+    paymentUrl.searchParams.set('action', 'pay');
 
     if (!CHANNEL_ACCESS_TOKEN) {
       return NextResponse.json(
@@ -60,8 +64,19 @@ export async function POST(request: Request) {
               height: 'sm',
               action: {
                 type: 'uri',
-                label: '查看訂單進度',
-                uri: getLiffReturnUrl(),
+                label: 'LINE Pay 線上付款',
+                uri: paymentUrl.toString(),
+              },
+            },
+            {
+              type: 'button',
+              style: 'secondary',
+              color: '#f0ebe6',
+              height: 'sm',
+              action: {
+                type: 'uri',
+                label: '查看訂單 LIVE',
+                uri: liveOrderUrl.toString(),
               },
             },
           ],
