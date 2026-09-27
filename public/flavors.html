@@ -388,8 +388,6 @@ body {
   line-height: 1.6;
 }
 
-
-
 /* 全螢幕公告 */
 #globalOverlay {
   position: fixed;
@@ -488,8 +486,8 @@ body {
     </div>
   </div>
 
-<div class="update-time" id="updateTimeDisplay">即時同步更新系統 --:--</div>
-<div class="update-time" id="countdownDisplay">下次更新 <span id="countdown">3</span> 秒</div>
+<div class="update-time" id="countdownDisplay">
+    <span id="countdownIcon">⏳</span> 即時同步更新系統</div>
   <div class="footer">©2026 OMG!Gelato·口味同步系統供查看，實際以現場供應為準</div>
 </div>
 
@@ -566,16 +564,16 @@ function setSyncStatus(status, text) {
   updateTimeDisplay.textContent = '口味同步系統更新於 ' + getCurrentTime();
 }
 let timer = null;
-let countdown = 3;
+let frameIndex = 0;
+const frames = ['⏳', '⌛'];   // 兩個互換，看起來就像沙漏在翻
 
 function startCountdown() {
     if (timer) return;
     timer = setInterval(() => {
-        countdown--;
-        if (countdown <= 0) countdown = 3;
-        const el = document.getElementById('countdown');
-        if (el) el.textContent = countdown;
-    }, 1000);
+        frameIndex = (frameIndex + 1) % frames.length;
+        const el = document.getElementById('countdownIcon');
+        if (el) el.textContent = frames[frameIndex];
+    }, 800);   // 每 0.8 秒換一次
 }
 
 function stopCountdown() {
