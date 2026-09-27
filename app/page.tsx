@@ -14,6 +14,7 @@ type Profile = {
 
 type Order = {
   orderNo?: string | number;
+  pickupNo?: string | number;
   total?: string | number;
   remark?: string;
   time?: string;
@@ -305,7 +306,7 @@ export default function Home() {
             <div className={styles.sectionHeading}><div><p className={styles.kicker}>YOUR SWEET MOMENTS</p><h1>我的訂單</h1></div><button type="button" className={styles.refreshButton} onClick={loadOrders} disabled={isLoadingOrders} aria-label="重新整理訂單">{isLoadingOrders ? '…' : '↻'}</button></div>
             {isLoadingOrders ? <div className={styles.emptyState}><span className={styles.loadingDot} /><p>正在找回你的甜蜜紀錄…</p></div> : orders.length === 0 ? <div className={styles.emptyState}><span className={styles.emptyEmoji}>○</span><h3>還沒有訂單</h3><p>今天就選一個喜歡的口味吧！</p><a href="/menu/" className={styles.secondaryButton}>前往今日口味</a></div> : <div className={styles.orderList}>{orders.map((order, index) => <article key={`${order.orderNo}-${index}`} className={styles.orderCard}>
               <div className={styles.orderTopline}><span className={styles.orderLabel}>ORDER · {formatOrderDate(order)}</span><span className={`${styles.orderStatus} ${order.voided ? styles.orderStatusCancelled : ''}`}>{getOrderStatus(order)}</span></div>
-              <div className={styles.orderMain}><div><h3>#{order.orderNo ?? '—'}</h3><p className={styles.pickupText}>{order.remark || '取餐時間未指定'}</p></div><strong>${order.total ?? 0}</strong></div>
+              <div className={styles.orderMain}><div><h3>取餐編號：{order.pickupNo ?? '待分配'}</h3><p className={styles.onlineOrderNo}>線上訂單編號：{order.orderNo ?? '—'}</p><p className={styles.pickupText}>{order.remark || '取餐時間未指定'}</p></div><strong>${order.total ?? 0}</strong></div>
               <div className={styles.orderDetails}><span className={styles.detailLabel}>品項摘要</span><ul>{formatOrderItems(order.items).map((item, itemIndex) => <li key={`${item}-${itemIndex}`}>{item}</li>)}</ul></div>
               <div className={styles.paymentRow}><span>LINE Pay <b>{getPaymentStatus(order)}</b></span>{['尚未付款', '付款失敗'].includes(getPaymentStatus(order)) && !order.voided && <button className={styles.linePayButton} onClick={() => startLinePay(order)} disabled={payingOrderNo === order.orderNo}>{payingOrderNo === order.orderNo ? '前往付款中…' : getPaymentStatus(order) === '付款失敗' ? '重新付款' : '使用 LINE Pay'}</button>}</div>
             </article>)}</div>}

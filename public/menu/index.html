@@ -1662,7 +1662,7 @@
         }
 
         import { initializeApp, getApp, getApps } from 'firebase/app';
-        import { getDatabase, ref, onValue, push, set, get } from 'firebase/database';
+        import { getDatabase, ref, onValue, push, set, get, runTransaction } from 'firebase/database';
 
         const firebaseConfig = {
             apiKey: "AIzaSyDvzZKr2x3TGeOFZGisKKXjbYH00DLVhKg",
@@ -2537,6 +2537,18 @@
             return lines.join('\n');
         }
 
+        async function getNextPickupNo() {
+            const dateKey = new Date().toISOString().slice(0, 10).replaceAll('-', '');
+            const counterRef = ref(db, `dailyPickupCounters/${dateKey}`);
+            try {
+                const result = await runTransaction(counterRef, (current) => Number(current || 0) + 1);
+                return String(result.snapshot.val()).padStart(3, '0');
+            } catch (error) {
+                console.warn('取餐流水號計數器無法使用，改用時間備援編號:', error);
+                return String(Date.now() % 1000).padStart(3, '0');
+            }
+        }
+
         async function sendOrderToLine(pickupText) {
             const body = generateOrderText(pickupText);
             if (body === '（尚未選取）') {
@@ -2563,9 +2575,11 @@
 
                 const total = itemsForFirebase.reduce((sum, item) => sum + item.price * item.qty, 0);
                 const orderNo = 'WEB-' + Date.now().toString(36).slice(-7).toUpperCase();
+                const pickupNo = await getNextPickupNo();
                 const orderRef = push(ref(db, 'orders'));
                 await set(orderRef, {
                     orderNo,
+                    pickupNo,
                     userId: window.liffUserId || null,
                     displayName: window.liffDisplayName || null,
                     time: new Date().toISOString(),
@@ -2592,6 +2606,7 @@
                     body: JSON.stringify({
                         orderText: body,
                         orderNo,
+                        pickupNo,
                         memberNo: memberProfile.memberNo,
                         phone: memberProfile.phone || null,
                         userId: memberProfile.lineUserId || null,

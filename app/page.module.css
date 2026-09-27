@@ -45,7 +45,8 @@
 .orderStatus { flex: 0 0 auto; padding: 5px 9px; border-radius: 20px; background: #e5efe0; color: #52734f; font-size: 10px; font-weight: 800; }
 .orderStatusCancelled { background: #f8e3df; color: #b1564c; }
 .orderMain { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
-.orderMain h3 { margin: 0 0 6px; }
+.orderMain h3 { margin: 0 0 6px; color: var(--green); }
+.onlineOrderNo { margin: 0 0 5px !important; color: var(--muted); font-size: 10px !important; letter-spacing: .02em; }
 .orderMain > strong { color: var(--red); font-size: 19px; }
 .pickupText { max-width: 220px; }
 .orderDetails { margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e6dbcc; }
