@@ -61,6 +61,7 @@ export async function POST(request: Request) {
 
     await updateOrder(order, {
       payment: '付款處理中',
+      paymentStatus: 'processing',
       paymentProvider: 'LINE_PAY',
       linePayTransactionId: String(info.transactionId),
       paymentRequestedAt: new Date().toISOString(),

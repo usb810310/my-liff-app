@@ -62,3 +62,33 @@
 .linePayButton:active { transform: scale(.97); }
 .linePayButton:disabled { opacity: .55; cursor: wait; }
 @media (max-width: 370px) { .paymentRow { align-items: flex-start; flex-direction: column; } .linePayButton { width: 100%; } }
+
+/* 即時訂單狀態時間軸 */
+.statusPanel { margin-top: 14px; padding: 16px 15px 15px; border: 1px solid #eee4d7; border-radius: 18px; background: linear-gradient(145deg, #fffdf8, #f8f2e9); box-shadow: 0 7px 18px rgba(92,68,42,.05); }
+.statusPanelReady { border-color: #d5e6ce; background: linear-gradient(145deg, #fbfff8, #edf6e8); }
+.statusPanelHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.statusPanelHeader > div { display: grid; gap: 4px; }
+.statusEyebrow { color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .13em; }
+.statusPanelHeader strong { color: var(--ink); font-size: 16px; letter-spacing: -.03em; }
+.liveStatusDot { flex: 0 0 auto; width: 9px; height: 9px; margin-top: 4px; border-radius: 50%; background: #75a66b; box-shadow: 0 0 0 5px rgba(117,166,107,.14); animation: statusPulse 1.8s ease-in-out infinite; }
+.statusHint { margin: 8px 0 15px; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.statusTimeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.statusStep { position: relative; display: flex; min-width: 0; flex-direction: column; align-items: center; gap: 6px; color: #b6aa9c; text-align: center; font-size: 9px; line-height: 1.25; }
+.statusStepIcon { position: relative; z-index: 1; display: grid; width: 27px; height: 27px; place-items: center; border: 1px solid #eadfd1; border-radius: 50%; background: #fffdf8; color: #b8aa9a; font-size: 9px; font-weight: 800; }
+.statusStepDone { color: #607d57; font-weight: 700; }
+.statusStepDone .statusStepIcon { border-color: #a9c79f; background: #e6f0e1; color: #52734f; }
+.statusStepCurrent .statusStepIcon { box-shadow: 0 0 0 5px rgba(223,138,81,.13); border-color: var(--orange); background: var(--orange); color: #fff; }
+.statusStep i { position: absolute; z-index: 0; top: 13px; left: calc(50% + 15px); width: calc(100% - 10px); height: 1px; background: #e5dacf; }
+.statusStep i.statusConnectorDone { background: #a9c79f; }
+.pickupAlert { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 11px 12px; border-radius: 13px; background: #e4f0df; color: #52734f; }
+.pickupAlert > span { display: grid; width: 26px; height: 26px; place-items: center; border-radius: 50%; background: #6e9865; color: #fff; font-size: 14px; }
+.pickupAlert div { display: grid; gap: 2px; }
+.pickupAlert b { font-size: 11px; }
+.pickupAlert small { color: #718a6b; font-size: 10px; }
+.statusNoticeRejected { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 13px 12px; border: 1px solid #f0d2cd; border-radius: 15px; background: #fff3f0; color: #a64a40; }
+.statusNoticeIcon { display: grid; flex: 0 0 auto; width: 26px; height: 26px; place-items: center; border-radius: 50%; background: #d75b4f; color: #fff; font-weight: 800; }
+.statusNoticeRejected div { display: grid; gap: 3px; }
+.statusNoticeRejected strong { font-size: 13px; }
+.statusNoticeRejected p { margin: 0; color: #ae766d; font-size: 10px; line-height: 1.45; }
+@keyframes statusPulse { 0%, 100% { opacity: .55; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .liveStatusDot { animation: none; } }

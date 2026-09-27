@@ -17,6 +17,7 @@ export async function GET(request: Request) {
       if (order && order.payment !== '已付款') {
         await updateOrder(order, {
           payment: '已取消',
+          paymentStatus: 'cancelled',
           linePayTransactionId: transactionId || order.linePayTransactionId || null,
           paymentCancelledAt: new Date().toISOString(),
         });

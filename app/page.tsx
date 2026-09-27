@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import liff from '@line/liff';
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getDatabase, get, limitToLast, push, query, ref, set } from 'firebase/database';
+import { getDatabase, get, limitToLast, onValue, push, query, ref, set } from 'firebase/database';
 import styles from './page.module.css';
 
 type Profile = {
@@ -13,7 +13,11 @@ type Profile = {
 };
 
 type Order = {
+  id?: string;
+  userId?: string;
   orderNo?: string | number;
+  displayNo?: string | number;
+  pickupCode?: string | number;
   pickupNo?: string | number;
   pickupNumber?: string | number;
   total?: string | number;
@@ -22,15 +26,19 @@ type Order = {
   date?: string;
   status?: string;
   payment?: string;
+  paymentStatus?: string;
+  channel?: string;
+  source?: string;
+  rejected?: boolean;
   voided?: boolean;
   items?: OrderItem[];
 };
 
 function getPaymentStatus(order: Order) {
   if (order.voided || order.payment === '已取消') return '已取消';
-  if (order.payment === '已付款' || order.payment === 'paid' || order.payment === '已確認') return '已付款';
-  if (order.payment === '付款處理中' || order.payment === 'processing') return '付款處理中';
-  if (order.payment === '付款失敗' || order.payment === 'failed') return '付款失敗';
+  if (order.paymentStatus === 'paid' || order.payment === '已付款' || order.payment === 'paid' || order.payment === '已確認') return '已付款';
+  if (order.paymentStatus === 'processing' || order.payment === '付款處理中' || order.payment === 'processing') return '付款處理中';
+  if (order.paymentStatus === 'failed' || order.payment === '付款失敗' || order.payment === 'failed') return '付款失敗';
   return '尚未付款';
 }
 
@@ -42,15 +50,47 @@ type OrderItem = {
 };
 
 function getOrderStatus(order: Order) {
-  if (order.voided) return '已取消';
-  const status = order.status || order.payment;
-  if (status === 'confirmed' || status === '已確認') return '已確認';
-  if (status === 'preparing' || status === '製作中') return '製作中';
-  if (status === 'ready' || status === '可取餐') return '可取餐';
-  if (status === 'completed' || status === '已完成') return '已完成';
-  if (status === 'cancelled' || status === '已取消') return '已取消';
-  if (status === '待確認' || status === 'pending') return '待確認';
-  return status || '已送出';
+  return getStatusMeta(order).label;
+}
+type OrderStatusKey = 'waiting' | 'accepted' | 'preparing' | 'ready' | 'completed' | 'rejected';
+const statusSteps: Array<{ key: Exclude<OrderStatusKey, 'rejected'>; label: string; icon: string }> = [
+  { key: 'waiting', label: '等待接單', icon: '01' },
+  { key: 'accepted', label: '店家已接單', icon: '02' },
+  { key: 'preparing', label: '製作中', icon: '03' },
+  { key: 'ready', label: '可以取餐', icon: '04' },
+];
+function getStatusMeta(order: Order) {
+  if (order.voided || order.rejected || ['cancelled', 'rejected', '已取消', '拒單'].includes(order.status || '')) {
+    return { key: 'rejected' as const, label: '店家無法接單', hint: '若已付款，退款會依付款服務流程處理。' };
+  }
+  const status = order.status || '';
+  if (['completed', '已完成'].includes(status)) return { key: 'completed' as const, label: '訂單已完成', hint: '謝謝你的光臨，期待下次見。' };
+  if (['ready', '可取餐'].includes(status)) return { key: 'ready' as const, label: '可以取餐', hint: '請依取餐編號到店取餐。' };
+  if (['preparing', '製作中'].includes(status)) return { key: 'preparing' as const, label: '製作中', hint: '店家正在為你準備冰淇淋。' };
+  if (['accepted', 'confirmed', '已確認', '接單'].includes(status)) return { key: 'accepted' as const, label: '店家已接單', hint: '訂單已進入製作流程。' };
+  return { key: 'waiting' as const, label: '等待店家接單', hint: '訂單已送出，店家確認後會立即更新。' };
+}
+
+function OrderStatusTimeline({ order }: { order: Order }) {
+  const meta = getStatusMeta(order);
+  if (meta.key === 'rejected') {
+    return <div className={styles.statusNoticeRejected}><span className={styles.statusNoticeIcon}>!</span><div><strong>{meta.label}</strong><p>{meta.hint}</p></div></div>;
+  }
+  const currentIndex = meta.key === 'completed' ? statusSteps.length : statusSteps.findIndex((step) => step.key === meta.key);
+  return (
+    <div className={`${styles.statusPanel} ${meta.key === 'ready' ? styles.statusPanelReady : ''}`}>
+      <div className={styles.statusPanelHeader}><div><span className={styles.statusEyebrow}>ORDER STATUS · 即時更新</span><strong>{meta.label}</strong></div><span className={styles.liveStatusDot} aria-label="即時同步中" /></div>
+      <p className={styles.statusHint}>{meta.hint}</p>
+      <div className={styles.statusTimeline} aria-label="訂單進度">
+        {statusSteps.map((step, index) => {
+          const isDone = index <= currentIndex;
+          const isCurrent = index === currentIndex && meta.key !== 'completed';
+          return <div key={step.key} className={`${styles.statusStep} ${isDone ? styles.statusStepDone : ''} ${isCurrent ? styles.statusStepCurrent : ''}`}><span className={styles.statusStepIcon}>{isDone ? '✓' : step.icon}</span><span>{step.label}</span>{index < statusSteps.length - 1 && <i className={isDone && index < currentIndex ? styles.statusConnectorDone : ''} />}</div>;
+        })}
+      </div>
+      {meta.key === 'ready' && <div className={styles.pickupAlert}><span>✦</span><div><b>取餐提醒</b><small>請向店員出示取餐編號</small></div></div>}
+    </div>
+  );
 }
 
 function formatOrderDate(order: Order) {
@@ -134,6 +174,22 @@ export default function Home() {
       cancelled = true;
     };
   }, [initAttempt]);
+
+  useEffect(() => {
+    if (!profile?.userId) return;
+    const ordersQuery = query(ref(getGelatoDatabase(), 'orders'), limitToLast(20));
+    return onValue(ordersQuery, (snapshot) => {
+      const userOrders: Order[] = [];
+      snapshot.forEach((child) => {
+        const order = { id: child.key ?? undefined, ...(child.val() as Order) };
+        if (order.userId === profile.userId) userOrders.push(order);
+      });
+      userOrders.sort((a, b) => new Date(b.time ?? 0).getTime() - new Date(a.time ?? 0).getTime());
+      setOrders(userOrders);
+    }, (error) => {
+      console.error('訂單即時同步失敗:', error);
+    });
+  }, [profile?.userId]);
 
   const loadOrders = async () => {
     if (!profile?.userId) return;
@@ -306,8 +362,9 @@ export default function Home() {
           <section className={styles.pageView}>
             <div className={styles.sectionHeading}><div><p className={styles.kicker}>YOUR SWEET MOMENTS</p><h1>我的訂單</h1></div><button type="button" className={styles.refreshButton} onClick={loadOrders} disabled={isLoadingOrders} aria-label="重新整理訂單">{isLoadingOrders ? '…' : '↻'}</button></div>
             {isLoadingOrders ? <div className={styles.emptyState}><span className={styles.loadingDot} /><p>正在找回你的甜蜜紀錄…</p></div> : orders.length === 0 ? <div className={styles.emptyState}><span className={styles.emptyEmoji}>○</span><h3>還沒有訂單</h3><p>今天就選一個喜歡的口味吧！</p><a href="/menu/" className={styles.secondaryButton}>前往今日口味</a></div> : <div className={styles.orderList}>{orders.map((order, index) => <article key={`${order.orderNo}-${index}`} className={styles.orderCard}>
-              <div className={styles.orderTopline}><span className={styles.orderLabel}>ORDER · {formatOrderDate(order)}</span><span className={`${styles.orderStatus} ${order.voided ? styles.orderStatusCancelled : ''}`}>{getOrderStatus(order)}</span></div>
-              <div className={styles.orderMain}><div><h3>取餐編號：{order.pickupNumber ?? order.pickupNo ?? '待分配'}</h3><p className={styles.onlineOrderNo}>線上訂單編號：{order.orderNo ?? '—'}</p><p className={styles.pickupText}>{order.remark || '取餐時間未指定'}</p></div><strong>${order.total ?? 0}</strong></div>
+              <div className={styles.orderTopline}><span className={styles.orderLabel}>ORDER · {formatOrderDate(order)}</span><span className={`${styles.orderStatus} ${order.voided || order.rejected ? styles.orderStatusCancelled : ''}`}>{getOrderStatus(order)}</span></div>
+              <OrderStatusTimeline order={order} />
+              <div className={styles.orderMain}><div><h3>取餐編號：{order.pickupCode ?? order.pickupNumber ?? order.pickupNo ?? order.displayNo ?? '待分配'}</h3><p className={styles.onlineOrderNo}>線上訂單編號：{order.orderNo ?? '—'}</p><p className={styles.pickupText}>{order.remark || '取餐時間未指定'}</p></div><strong>${order.total ?? 0}</strong></div>
               <div className={styles.orderDetails}><span className={styles.detailLabel}>品項摘要</span><ul>{formatOrderItems(order.items).map((item, itemIndex) => <li key={`${item}-${itemIndex}`}>{item}</li>)}</ul></div>
               <div className={styles.paymentRow}><span>LINE Pay <b>{getPaymentStatus(order)}</b></span>{['尚未付款', '付款失敗'].includes(getPaymentStatus(order)) && !order.voided && <button className={styles.linePayButton} onClick={() => startLinePay(order)} disabled={payingOrderNo === order.orderNo}>{payingOrderNo === order.orderNo ? '前往付款中…' : getPaymentStatus(order) === '付款失敗' ? '重新付款' : '使用 LINE Pay'}</button>}</div>
             </article>)}</div>}

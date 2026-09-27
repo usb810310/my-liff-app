@@ -38,6 +38,7 @@ export async function GET(request: Request) {
 
     await updateOrder(order, {
       payment: '已付款',
+      paymentStatus: 'paid',
       status: '已確認',
       linePayTransactionId: String(linePayResponse.info?.transactionId || transactionId),
       linePayConfirmedAt: new Date().toISOString(),
@@ -53,6 +54,7 @@ export async function GET(request: Request) {
         if (failedOrder && failedOrder.payment !== '已付款') {
           await updateOrder(failedOrder, {
             payment: '付款失敗',
+            paymentStatus: 'failed',
             status: '付款失敗',
             linePayError: error instanceof Error ? error.message : '付款確認失敗',
             paymentFailedAt: new Date().toISOString(),

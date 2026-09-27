@@ -2579,8 +2579,10 @@
                 const orderRef = push(ref(db, 'orders'));
                 await set(orderRef, {
                     orderNo,
+                    channel: 'online',
                     pickupNo,
                     pickupNumber: pickupNo,
+                    pickupCode: pickupNo,
                     userId: window.liffUserId || null,
                     displayName: window.liffDisplayName || null,
                     time: new Date().toISOString(),
@@ -2588,10 +2590,11 @@
                     items: itemsForFirebase,
                     total,
                     payment: '待確認',
+                    paymentStatus: 'pending',
                     remark: `取餐時間：${pickupText}`,
                     source: window.liffUserId ? 'LIFF' : 'WEB_GUEST',
                     voided: false,
-                    status: 'pending',
+                    status: 'waiting_accept',
                     memberNo: memberProfile.memberNo,
                     memberKey: memberProfile.memberKey,
                     phone: memberProfile.phone || null,
