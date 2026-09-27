@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getLiffReturnUrl } from '@/lib/linepay';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://omg-gelato79.pages.dev',
@@ -44,6 +45,25 @@ export async function POST(request: Request) {
             { type: 'text', text: `線上訂單編號：${orderNo || '—'}`, size: 'sm', color: '#666666', margin: 'sm' },
             { type: 'separator' },
             { type: 'text', text: orderText, wrap: true, size: 'xs', color: '#666666' },
+          ],
+        },
+        footer: {
+          type: 'box',
+          layout: 'vertical',
+          spacing: 'sm',
+          margin: 'lg',
+          contents: [
+            {
+              type: 'button',
+              style: 'primary',
+              color: '#2d1f14',
+              height: 'sm',
+              action: {
+                type: 'uri',
+                label: '查看訂單進度',
+                uri: getLiffReturnUrl(),
+              },
+            },
           ],
         },
       },
