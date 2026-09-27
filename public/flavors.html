@@ -111,7 +111,6 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  /* 改回原本的底部留白，因為沒有按鈕了 */
   padding: 14px 16px calc(40px + env(safe-area-inset-bottom));
   color: var(--text-primary);
   transition: background 0.35s ease, color 0.35s ease;
@@ -190,9 +189,18 @@ body {
 
 /* ===== 品牌 ===== */
 .brand { text-align: center; padding: 16px 0 6px; }
+.brand-logo-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 72px;
+  margin-bottom: 4px;
+}
 .brand-logo {
-  width: 72px; height: 72px;
+  width: 72px;
+  height: 72px;
   object-fit: contain;
+  display: block;
   filter: drop-shadow(0 4px 16px rgba(44, 36, 30, 0.08));
 }
 .brand-title-box { display: inline-flex; flex-direction: column; align-items: center; }
@@ -434,6 +442,7 @@ body {
 @media (max-width: 480px) {
   body { padding: 10px 12px calc(32px + env(safe-area-inset-bottom)); }
   .brand-logo { width: 62px; height: 62px; }
+  .brand-logo-wrap { min-height: 62px; }
   .brand-title { font-size: 26px; letter-spacing: 1.5px; }
   .page-title { font-size: 15px; }
   .today-card { width: 108px; padding: 12px 8px 10px; min-height: 92px; }
@@ -458,7 +467,9 @@ body {
   </div>
 
   <div class="brand">
-    <img src="https://omg-gelato79.pages.dev/logo1.png" alt="OMG! Gelato" class="brand-logo" id="brandLogo" />
+    <div class="brand-logo-wrap">
+      <img src="https://omg-gelato79.pages.dev/logo1.png" alt="OMG! Gelato" class="brand-logo" id="brandLogo" />
+    </div>
     <div class="brand-title-box">
       <h1 class="brand-title" id="brandMainTitle">OMG! <span>Gelato</span></h1>
       <div class="brand-divider"></div>
@@ -486,8 +497,9 @@ body {
     </div>
   </div>
 
-<div class="update-time" id="countdownDisplay">
-    <span id="countdownIcon">⏳</span> 即時同步更新系統</div>
+  <div class="update-time" id="countdownDisplay">
+    即時同步更新系統 <span id="countdownIcon">⏳</span>
+  </div>
   <div class="footer">©2026 OMG!Gelato·口味同步系統供查看，實際以現場供應為準</div>
 </div>
 
@@ -531,7 +543,6 @@ const todayScroll     = document.getElementById('todayScroll');
 const scrollFill      = document.getElementById('scrollFill');
 const syncText        = document.getElementById('syncText');
 const indicatorDot    = document.getElementById('indicatorDot');
-const updateTimeDisplay = document.getElementById('updateTimeDisplay');
 const fingerSwipe     = document.getElementById('fingerSwipe');
 const backBtn         = document.getElementById('backBtn');
 
@@ -554,40 +565,39 @@ function escapeHtml(s) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
-function getCurrentTime() {
-  const d = new Date();
-  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-}
+
 function setSyncStatus(status, text) {
   indicatorDot.className = 'indicator ' + status;
   syncText.textContent = text;
-  updateTimeDisplay.textContent = '口味同步系統更新於 ' + getCurrentTime();
 }
+
+/* ---------- 沙漏翻轉動畫 ---------- */
 let timer = null;
 let frameIndex = 0;
-const frames = ['⏳', '⌛'];   // 兩個互換，看起來就像沙漏在翻
+const frames = ['⏳', '⌛'];
 
 function startCountdown() {
-    if (timer) return;
-    timer = setInterval(() => {
-        frameIndex = (frameIndex + 1) % frames.length;
-        const el = document.getElementById('countdownIcon');
-        if (el) el.textContent = frames[frameIndex];
-    }, 800);   // 每 0.8 秒換一次
+  if (timer) return;
+  timer = setInterval(() => {
+    frameIndex = (frameIndex + 1) % frames.length;
+    const el = document.getElementById('countdownIcon');
+    if (el) el.textContent = frames[frameIndex];
+  }, 800);
 }
 
 function stopCountdown() {
-    clearInterval(timer);
-    timer = null;
+  clearInterval(timer);
+  timer = null;
 }
 
 document.addEventListener('visibilitychange', () => {
-    if (document.hidden) stopCountdown();
-    else startCountdown();
+  if (document.hidden) stopCountdown();
+  else startCountdown();
 });
 
 startCountdown();
 
+/* ---------- 滑動手指提示 ---------- */
 function hideFinger() {
   if (!fingerSwipe) return;
   fingerSwipe.classList.add('hidden');
