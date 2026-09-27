@@ -2580,6 +2580,7 @@
                 await set(orderRef, {
                     orderNo,
                     pickupNo,
+                    pickupNumber: pickupNo,
                     userId: window.liffUserId || null,
                     displayName: window.liffDisplayName || null,
                     time: new Date().toISOString(),
@@ -2607,6 +2608,7 @@
                         orderText: body,
                         orderNo,
                         pickupNo,
+                        pickupNumber: pickupNo,
                         memberNo: memberProfile.memberNo,
                         phone: memberProfile.phone || null,
                         userId: memberProfile.lineUserId || null,

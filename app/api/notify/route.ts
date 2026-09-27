@@ -13,7 +13,8 @@ export function OPTIONS() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { orderText, orderNo, pickupNo, userId, displayName, pictureUrl } = body;
+    const { orderText, orderNo, pickupNo, pickupNumber, userId, displayName, pictureUrl } = body;
+    const customerPickupNumber = pickupNumber || pickupNo || '待分配';
 
     const CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
 
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
     // 建立客人端的 Flex Message 卡片
     const customerCard = {
       type: 'flex',
-      altText: `✅ 訂單已收到！取餐編號 ${pickupNo || '待分配'}`,
+      altText: `✅ 訂單已收到！取餐編號 ${customerPickupNumber}`,
       contents: {
         type: 'bubble',
         size: 'mega',
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
           type: 'box', layout: 'vertical', spacing: 'md',
           contents: [
             { type: 'text', text: '我們會盡快為您準備！', wrap: true, size: 'md', color: '#333333' },
-            { type: 'text', text: `取餐編號：${pickupNo || '待分配'}`, weight: 'bold', size: 'xl', color: '#06C755', margin: 'md' },
+            { type: 'text', text: `取餐編號：${customerPickupNumber}`, weight: 'bold', size: 'xl', color: '#06C755', margin: 'md' },
             { type: 'text', text: `線上訂單編號：${orderNo || '—'}`, size: 'sm', color: '#666666', margin: 'sm' },
             { type: 'separator' },
             { type: 'text', text: orderText, wrap: true, size: 'xs', color: '#666666' },
