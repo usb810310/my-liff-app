@@ -135,6 +135,7 @@ body {
   transition: background 0.35s ease, border-color 0.35s ease;
 }
 
+/* 左右箭頭呼吸動畫 */
 .arrow-left,
 .arrow-right {
   display: inline-block;
@@ -142,42 +143,16 @@ body {
   animation-iteration-count: infinite;
   animation-timing-function: ease-in-out;
 }
-
-.arrow-left {
-  animation-name: pushLeft;
-}
-
-.arrow-right {
-  animation-name: pushRight;
-}
+.arrow-left  { animation-name: pushLeft; }
+.arrow-right { animation-name: pushRight; }
 
 @keyframes pushLeft {
-  0%, 100% { transform: translateX(0); opacity: .7; }
-  50%      { transform: translateX(-4px); opacity: 1; }
+  0%, 100% { transform: translateX(0);    opacity: .7; }
+  50%      { transform: translateX(-4px); opacity: 1;  }
 }
-
 @keyframes pushRight {
-  0%, 100% { transform: translateX(0); opacity: .7; }
-  50%      { transform: translateX(4px); opacity: 1; }
-}
-
-.glass-face,
-.glass-back {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backface-visibility: hidden;
-}
-
-.glass-back {
-  transform: rotateY(180deg);
-}
-
-@keyframes hourglassRotate {
-  0%   { transform: rotateY(0deg); }
-  100% { transform: rotateY(360deg); }
+  0%, 100% { transform: translateX(0);   opacity: .7; }
+  50%      { transform: translateX(4px); opacity: 1;  }
 }
 
 .pill-btn {
@@ -396,7 +371,7 @@ body {
 }
 @keyframes fingerMove {
   0%, 100% { transform: translateX(-50%) translateX(-15px); opacity: 0.4; }
-  50% { transform: translateX(-50%) translateX(15px); opacity: 1; }
+  50%      { transform: translateX(-50%) translateX(15px);  opacity: 1;   }
 }
 .finger-swipe.hidden { opacity: 0 !important; animation: none !important; }
 
@@ -528,7 +503,7 @@ body {
 
   <div class="today-section" id="todaySection">
     <div class="today-scroll-wrapper">
-      <div class="finger-swipe" id="fingerSwipe">↞👆↠</div>
+      <div class="finger-swipe" id="fingerSwipe"><span class="arrow-left">↞</span>👆<span class="arrow-right">↠</span></div>
       <div class="today-scroll" id="todayScroll">
         <div class="today-scroll-content">
           <div class="today-grid" id="todayGrid">
@@ -542,13 +517,6 @@ body {
     </div>
   </div>
 
-<!-- 把原来的 <span id="countdownIcon">⌛</span> 替换为 -->
-<span class="hourglass-flip">
-  <span class="glass-face">⌛</span>
-  <span class="glass-back">⏳</span>
-</span>
-
-  </div>
   <div class="footer">©2026 OMG!Gelato·口味同步系統供查看，實際以現場供應為準</div>
 </div>
 
@@ -587,13 +555,13 @@ const db = getDatabase(app);
   else window.addEventListener('liff-sdk-ready', run, { once: true });
 })();
 
-const todayGrid       = document.getElementById('todayGrid');
-const todayScroll     = document.getElementById('todayScroll');
-const scrollFill      = document.getElementById('scrollFill');
-const syncText        = document.getElementById('syncText');
-const indicatorDot    = document.getElementById('indicatorDot');
-const fingerSwipe     = document.getElementById('fingerSwipe');
-const backBtn         = document.getElementById('backBtn');
+const todayGrid    = document.getElementById('todayGrid');
+const todayScroll  = document.getElementById('todayScroll');
+const scrollFill   = document.getElementById('scrollFill');
+const syncText     = document.getElementById('syncText');
+const indicatorDot = document.getElementById('indicatorDot');
+const fingerSwipe  = document.getElementById('fingerSwipe');
+const backBtn      = document.getElementById('backBtn');
 
 const COLOR_MAP = {
   '開心果': '#8CB872', '草莓': '#E8837A', '巧克力': '#8D7A6D', '芒果': '#F5C542',
@@ -619,27 +587,6 @@ function setSyncStatus(status, text) {
   indicatorDot.className = 'indicator ' + status;
   syncText.textContent = text;
 }
-
-function startCountdown() {
-  if (timer) return;
-  timer = setInterval(() => {
-    frameIndex = (frameIndex + 1) % frames.length;
-    const el = document.getElementById('countdownIcon');
-    if (el) el.textContent = frames[frameIndex];
-  }, 800);
-}
-
-function stopCountdown() {
-  clearInterval(timer);
-  timer = null;
-}
-
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) stopCountdown();
-  else startCountdown();
-});
-
-startCountdown();
 
 /* ---------- 滑動手指提示 ---------- */
 function hideFinger() {
