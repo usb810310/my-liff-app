@@ -1272,14 +1272,6 @@
             cursor: not-allowed;
         }
 
-        .auth-choice-card { background: linear-gradient(135deg, #fffaf2, #f4eadb); border: 1px solid var(--border-light); border-radius: 20px; padding: 18px; margin: 4px 0 12px; }
-        .auth-choice-card h4 { margin: 0 0 8px; color: var(--text-primary); font-size: 18px; }
-        .auth-choice-card p { margin: 0; color: var(--text-secondary); font-size: 13px; line-height: 1.6; }
-        .auth-choice-actions { display: grid; gap: 10px; margin-top: 16px; }
-        .auth-choice-actions button { width: 100%; border: 0; border-radius: 14px; padding: 13px 16px; font: inherit; font-weight: 700; cursor: pointer; }
-        .auth-line-btn { background: #06c755; color: #fff; }
-        .auth-guest-btn { background: var(--bg-sold); color: var(--text-primary); border: 1px solid var(--border-light) !important; }
-        .auth-choice-note { margin-top: 12px; color: var(--text-muted); font-size: 11px; text-align: center; }
         .floating-toast {
             position: fixed;
             top: 24px;
@@ -1611,25 +1603,6 @@
         </div>
     </div>
 
-    <!-- ===== 結帳登入選擇 Modal ===== -->
-    <div class="modal-overlay" id="authChoiceModal">
-        <div class="modal-box">
-            <div class="modal-header">
-                <h3>🍨 完成訂單</h3>
-                <button class="modal-close" id="authChoiceClose">✕</button>
-            </div>
-            <div class="auth-choice-card">
-                <h4>登入 LINE，享有完整訂單服務</h4>
-                <p>可收到訂單狀態通知、查看訂單 LIVE、使用 LINE Pay，之後也能更方便洽詢客服。</p>
-            </div>
-            <div class="auth-choice-actions">
-                <button class="auth-line-btn" id="authLineBtn">使用 LINE 登入下單</button>
-                <button class="auth-guest-btn" id="authGuestBtn">不登入，使用訪客身分下單</button>
-            </div>
-            <div class="auth-choice-note">不想登入也沒關係，訪客下單仍會要求手機號碼以便查詢。</div>
-            <div class="modal-error" id="authChoiceError"></div>
-        </div>
-    </div>
     <!-- ===== 許願池 Modal ===== -->
     <div class="modal-overlay" id="wishModal">
         <div class="modal-box">
@@ -1672,17 +1645,15 @@
             window.addEventListener('liff-sdk-ready', handleReady, { once: true });
             window.addEventListener('liff-sdk-error', handleError, { once: true });
         });
-        let liffReady = false;
 
                 if (liff) {
             liff.init({ liffId: '2011536222-v4OvTSup' }).then(() => {
-                liffReady = true;
                 if (liff.isLoggedIn()) {
                     liff.getProfile().then(profile => {
                         window.liffUserId = profile.userId;
                         window.liffDisplayName = profile.displayName;
                         window.liffPictureUrl = profile.pictureUrl;
-                        restorePendingOrderDraft();
+                        
                     });
                 }
             }).catch(err => console.error('LIFF 初始化失敗:', err));
@@ -1749,11 +1720,6 @@
         const pickupModalConfirm = document.getElementById('pickupModalConfirm');
         const pickupModalCancel = document.getElementById('pickupModalCancel');
         const pickupModalClose = document.getElementById('pickupModalClose');
-        const authChoiceModal = document.getElementById('authChoiceModal');
-        const authChoiceClose = document.getElementById('authChoiceClose');
-        const authLineBtn = document.getElementById('authLineBtn');
-        const authGuestBtn = document.getElementById('authGuestBtn');
-        const authChoiceError = document.getElementById('authChoiceError');
 
         // 許願池
         const wishModal = document.getElementById('wishModal');
@@ -1772,51 +1738,6 @@
         let selectedDate = 'today';
         let selectedSlot = null;
         let currentMember = { memberNo: null, phone: null, memberKey: null, memberType: null };
-
-        function closeAuthChoiceModal() {
-            authChoiceModal.classList.remove('open');
-            document.body.style.overflow = '';
-            authChoiceError.textContent = '';
-        }
-        function openAuthChoiceModal() {
-            authChoiceError.textContent = '';
-            authChoiceModal.classList.add('open');
-            document.body.style.overflow = 'hidden';
-        }
-        function savePendingOrderDraft() {
-            sessionStorage.setItem('omg-pending-order-draft', JSON.stringify({ duetPairs, cupMap, shareBoxes }));
-        }
-        function restorePendingOrderDraft() {
-            const raw = sessionStorage.getItem('omg-pending-order-draft');
-            if (!raw) return;
-            try {
-                const draft = JSON.parse(raw);
-                if (Array.isArray(draft.duetPairs)) duetPairs = draft.duetPairs;
-                if (draft.cupMap && typeof draft.cupMap === 'object') cupMap = draft.cupMap;
-                if (Array.isArray(draft.shareBoxes)) shareBoxes = draft.shareBoxes;
-                sessionStorage.removeItem('omg-pending-order-draft');
-                updateOrderDisplay();
-                showToast('已恢復剛才選擇的口味，請繼續選取餐時間', '✅');
-                window.setTimeout(openPickupModal, 350);
-            } catch (error) {
-                console.warn('購物車草稿恢復失敗:', error);
-                sessionStorage.removeItem('omg-pending-order-draft');
-            }
-        }
-        authChoiceClose.addEventListener('click', closeAuthChoiceModal);
-        authChoiceModal.addEventListener('click', (event) => { if (event.target === authChoiceModal) closeAuthChoiceModal(); });
-        authGuestBtn.addEventListener('click', () => {
-            closeAuthChoiceModal();
-            openPickupModal();
-        });
-        authLineBtn.addEventListener('click', () => {
-            if (!liff || !liffReady) {
-                authChoiceError.textContent = 'LINE 登入服務尚未準備好，請稍後再試。';
-                return;
-            }
-            savePendingOrderDraft();
-            liff.login({ redirectUri: window.location.href });
-        });
 
         function createMemberNo() {
             const stamp = Date.now().toString(36).toUpperCase();
@@ -2089,6 +2010,16 @@
             updatePickupDisplay();
         }
 
+        // ★★★ 新增：取得取餐日期字串（絕對日期） ★★★
+        function getPickupDateStr(dateType) {
+            const d = new Date();
+            if (dateType === 'tomorrow') d.setDate(d.getDate() + 1);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}/${m}/${day}`;
+        }
+
         function updatePickupDisplay() {
             const dateStr = selectedDate === 'today' ? '今天' : '明天';
             if (selectedSlot !== null) {
@@ -2164,8 +2095,9 @@
             createOrderSubmitLock();
             setOrderSubmitting(true);
             closePickupModal();
-            const dateStr = selectedDate === 'today' ? '今天' : '明天';
-            const pickupText = `${dateStr} ${selectedSlot}`;
+            // ★★★ 修改：改存絕對日期，例如 2026/09/28 20:00 ★★★
+            const pickupDate = getPickupDateStr(selectedDate);
+            const pickupText = `${pickupDate} ${selectedSlot}`;
             await sendOrderToLine(pickupText);
         });
 
@@ -2594,7 +2526,7 @@
                 return '（尚未選取）';
             }
 
-                        lines.push(' 𝕚 您的訂單配置如下');
+                       lines.push(' 𝕚 您的訂單配置如下');
             if (pickupText) {
                 lines.push(`取貨時間⋯⋯：${pickupText}`);
             }
@@ -2605,7 +2537,7 @@
                 lines.push(line);
             }
             lines.push('');
-            lines.push(`訂單總額$${total}`);
+            lines.push(`總額$${total}`);
             lines.push('');
 
             while (lines.length > 0 && lines[0] === '') lines.shift();
@@ -2723,8 +2655,7 @@
         sendLineBtn.addEventListener('click', () => {
             const hasItems = duetPairs.length > 0 || Object.keys(cupMap).length > 0 || shareBoxes.length > 0;
             if (!hasItems) { showToast('請先選取口味', '⚠️'); return; }
-            if (window.liffUserId) openPickupModal();
-            else openAuthChoiceModal();
+            openPickupModal();
         });
 
         document.getElementById('todayGrid').addEventListener('click', (e) => {
