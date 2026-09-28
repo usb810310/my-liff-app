@@ -2526,19 +2526,40 @@
                 return '（尚未選取）';
             }
 
-                       lines.push(' 𝕚 您的訂單配置如下');
-            if (pickupText) {
-                lines.push(`取貨時間⋯⋯：${pickupText}`);
-            }
-            lines.push('');
-            for (let i = 0; i < itemLines.length; i++) {
-                const line = itemLines[i];
-                if (i === itemLines.length - 1 && line === '') continue;
-                lines.push(line);
-            }
-            lines.push('');
-            lines.push(`總額$${total}`);
-            lines.push('');
+            lines.push(' 𝕚 顧客線上點選配置如下');
+if (pickupText) {
+    // 1. 顯示顧客自己選取的相對時間（例如：今天 14:00）
+    lines.push(`🛒 顧客選取：${pickupText}`);
+
+    // 2. 計算並顯示店家的絕對時間（例如：9/30 14:00）
+    let shopReadableTime = pickupText; // 預設如果無法計算就顯示原字串
+    
+    // 確保有訂單成立時間 (order.time) 才能進行推算
+    if (order && order.time) {
+        const orderTime = new Date(order.time);
+        const targetDate = new Date(orderTime);
+        
+        // 根據相對文字推算真實日期
+        if (pickupText.includes('明天')) {
+            targetDate.setDate(orderTime.getDate() + 1);
+        } else if (pickupText.includes('後天')) {
+            targetDate.setDate(orderTime.getDate() + 2);
+        }
+        // 如果是「今天」，targetDate 保持為 orderTime 即可
+
+        // 格式化為 M/D (例如 9/30)
+        const dateStr = `${targetDate.getMonth() + 1}/${targetDate.getDate()}`;
+        
+        // 把「今天」、「明天」、「後天」字眼拔掉，只留下時間 (例如 14:00)
+        const timePart = pickupText.replace(/今天|明天|後天/g, '').trim();
+        
+        shopReadableTime = `${dateStr} ${timePart}`;
+    }
+
+    // 3. 顯示給店家看的絕對時間
+    lines.push(`🏪 店家參考(絕對時間)：${shopReadableTime}`);
+}
+lines.push('');
 
             while (lines.length > 0 && lines[0] === '') lines.shift();
             while (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
