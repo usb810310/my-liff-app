@@ -1,10 +1,24 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { startTransition, useEffect, useEffectEvent, useRef, useState } from 'react';
+
+import Image from 'next/image';
 import liff from '@line/liff';
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getDatabase, get, limitToLast, onValue, push, query, ref, set } from 'firebase/database';
 import styles from './page.module.css';
+
+// ====== 新增：每日動態文案設定 ======
+const dailyData = [
+  { kicker: "BUON GIORNO, GELATO LOVER", flavor: "許願口味", desc: "每天新鮮製作，讓一口冰涼的義式風味，替今天留下一點甜。" }, // 週日 (0)
+  { kicker: "BUON LUNEDI, GELATO LOVER", flavor: "開心果口味", desc: "開啟一週的活力，用濃郁的堅果香氣提振精神！" }, // 週一 (1)
+  { kicker: "BUON MARTEDI, GELATO LOVER", flavor: "草莓口味", desc: "酸甜的草莓果肉，讓平凡的日子多一點粉紅泡泡。" }, // 週二 (2)
+  { kicker: "BUON MERCOLEDI, GELATO LOVER", flavor: "巧克力口味", desc: "濃郁可可，是熬過一半工作週的最佳獎勵。" }, // 週三 (3)
+  { kicker: "BUON GIOVEDI, GELATO LOVER", flavor: "檸檬口味", desc: "清爽的檸檬雪酪，掃除一週的疲憊感。" }, // 週四 (4)
+  { kicker: "BUON VENERDI, GELATO LOVER", flavor: "提拉米蘇口味", desc: "週末即將到來，先享受一口經典的義式甜蜜。" }, // 週五 (5)
+  { kicker: "BUON SABATO, GELATO LOVER", flavor: "芒果口味", desc: "悠閒的假日，就用熱帶水果的香甜來慶祝吧！" }  // 週六 (6)
+];
+// ===================================
 
 type Profile = {
   userId: string;
@@ -144,6 +158,17 @@ export default function Home() {
   const [initAttempt, setInitAttempt] = useState(0);
   const autoPayStarted = useRef(false);
 
+  // ====== 新增：每日動態文案的狀態 ======
+  const [todayContent, setTodayContent] = useState(dailyData[0]);
+  // ===================================
+
+  // ====== 新增：在瀏覽器載入後，根據今天星期幾更新文案 ======
+  useEffect(() => {
+    const todayIndex = new Date().getDay();
+    setTodayContent(dailyData[todayIndex]);
+  }, []);
+  // =======================================================
+
   useEffect(() => {
     let cancelled = false;
     const initLiff = async () => {
@@ -276,6 +301,14 @@ export default function Home() {
     }
   };
 
+  const handleOrderReturn = useEffectEvent((targetOrder: Order, action: string | null) => {
+    startTransition(() => setActiveTab('orders'));
+    if (action === 'pay' && !autoPayStarted.current && ['尚未付款', '付款失敗'].includes(getPaymentStatus(targetOrder))) {
+      autoPayStarted.current = true;
+      void startLinePay(targetOrder);
+    }
+  });
+
   useEffect(() => {
     if (!profile?.userId || !orders.length) return;
     const params = new URLSearchParams(window.location.search);
@@ -284,17 +317,13 @@ export default function Home() {
     if (!orderNo) return;
     const targetOrder = orders.find((order) => String(order.orderNo) === orderNo);
     if (!targetOrder) return;
-    setActiveTab('orders');
-    if (action === 'pay' && !autoPayStarted.current && ['尚未付款', '付款失敗'].includes(getPaymentStatus(targetOrder))) {
-      autoPayStarted.current = true;
-      void startLinePay(targetOrder);
-    }
+    handleOrderReturn(targetOrder, action);
   }, [profile?.userId, orders]);
 
   if (!profile && (status.includes('正在初始化') || status === '載入中...')) {
     return (
       <main className={styles.loadingScreen}>
-        <div className={styles.loadingLogo}><img src="/logo-new.png" alt="On My Gelato" /></div>
+        <div className={styles.loadingLogo}><Image src="/logo-new.png" alt="On My Gelato" width={57} height={57} /></div>
         <span className={styles.loadingDot} />
         <p>正在準備今天的冰淇淋</p>
       </main>
@@ -304,7 +333,7 @@ export default function Home() {
   if (!profile && status) {
     return (
       <main className={styles.loadingScreen}>
-        <div className={styles.loadingLogo}><img src="/logo-new.png" alt="On My Gelato" /></div>
+        <div className={styles.loadingLogo}><Image src="/logo-new.png" alt="On My Gelato" width={57} height={57} /></div>
         <div className={styles.initErrorCard}>
           <p className={styles.initErrorKicker}>PLEASE TRY AGAIN</p>
           <h1>頁面暫時無法載入</h1>
@@ -320,7 +349,7 @@ export default function Home() {
     <main className={styles.appShell}>
       <header className={styles.topbar}>
         <div className={styles.brandLockup}>
-          <img src="/logo-new.png" alt="On My Gelato" className={styles.brandLogo} />
+          <Image src="/logo-new.png" alt="On My Gelato" width={42} height={42} className={styles.brandLogo} />
           <div>
             <p className={styles.eyebrow}>ARTISAN GELATO</p>
             <p className={styles.brandName}><span>On</span> My <b>Gelato</b></p>
@@ -336,10 +365,12 @@ export default function Home() {
           <div className={styles.homeView}>
             <section className={styles.heroCard}>
               <div className={styles.heroCopy}>
-                <p className={styles.kicker}>BUON GIORNO, GELATO LOVER</p>
-                <h1>今天，<br /><em>想來一球</em>什麼？</h1>
-                <p className={styles.heroDescription}>每天新鮮製作，讓一口冰涼的義式風味，替今天留下一點甜。</p>
-                <a className={styles.primaryButton} href="/menu/">探索今日口味 <span>↗</span></a>
+                {/* ====== 修改處：將原本寫死的文字改為 todayContent 變數 ====== */}
+                <p className={styles.kicker}>{todayContent.kicker}</p>
+                <h1>今天～<br /><em>要不..試看看</em>{todayContent.flavor}</h1>
+                <p className={styles.heroDescription}>{todayContent.desc}</p>
+                {/* ========================================================== */}
+                <a className={styles.primaryButton} href="/menu/">來去許願看看<span>↗</span></a>
               </div>
               <div className={styles.heroArt} aria-hidden="true">
                 <div className={styles.sunShape} />
@@ -352,7 +383,7 @@ export default function Home() {
 
             <section className={styles.welcomeRow}>
               <div className={styles.avatarWrap}>
-                {profile?.pictureUrl ? <img src={profile.pictureUrl} alt="會員頭像" /> : <span>OG</span>}
+                {profile?.pictureUrl ? <Image src={profile.pictureUrl} alt="會員頭像" width={42} height={42} /> : <span>OG</span>}
               </div>
               <div>
                 <p className={styles.miniLabel}>WELCOME BACK</p>
@@ -389,7 +420,7 @@ export default function Home() {
 
         {activeTab === 'member' && (
           <section className={styles.pageView}>
-            <div className={styles.memberHero}><div className={styles.memberAvatar}>{profile?.pictureUrl ? <img src={profile.pictureUrl} alt="會員頭像" /> : <span>OG</span>}</div><p className={styles.kicker}>GELATO CLUB MEMBER</p><h1>{profile?.displayName || 'Gelato Lover'}</h1><p className={styles.memberId}>ID · {profile?.userId?.slice(-8) || 'WELCOME'}</p></div>
+            <div className={styles.memberHero}><div className={styles.memberAvatar}>{profile?.pictureUrl ? <Image src={profile.pictureUrl} alt="會員頭像" width={96} height={96} /> : <span>OG</span>}</div><p className={styles.kicker}>GELATO CLUB MEMBER</p><h1>{profile?.displayName || 'Gelato Lover'}</h1><p className={styles.memberId}>ID · {profile?.userId?.slice(-8) || 'WELCOME'}</p></div>
             <a href="https://lin.ee/sB558niE" target="_blank" rel="noopener noreferrer" className={styles.lineButton}><span>LINE</span> 加入好友，接收最新口味 <b>↗</b></a>
             <div className={styles.wishCard}><div className={styles.wishHeading}><span>✦</span><div><p className={styles.kicker}>TASTE LAB</p><h2>口味許願池</h2></div></div><p>下一球，也許就是你最想吃的那一球。</p><textarea value={wishText} onChange={(e) => setWishText(e.target.value)} placeholder="例如：海鹽焦糖、開心果…" /><button onClick={submitWish} disabled={isSubmittingWish || !wishText.trim()} className={styles.wishButton}>{isSubmittingWish ? '送出中…' : '送出我的願望 ✦'}</button>{wishSuccess && <p className={styles.successMessage}>✓ 收到了！謝謝你的口味提案。</p>}</div>
           </section>

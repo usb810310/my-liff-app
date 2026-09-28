@@ -14,7 +14,7 @@ export function OPTIONS() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { orderText, orderNo, pickupNo, pickupNumber, userId, displayName, pictureUrl } = body;
+    const { orderText, orderNo, pickupNo, pickupNumber, userId } = body;
     const customerPickupNumber = pickupNumber || pickupNo || '待分配';
 
     const CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
@@ -101,9 +101,10 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, warning: customerError }, { headers: corsHeaders });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : '未知錯誤';
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500, headers: corsHeaders },
     );
   }
