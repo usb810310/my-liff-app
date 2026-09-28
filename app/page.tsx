@@ -7,22 +7,57 @@ import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getDatabase, get, limitToLast, onValue, push, query, ref, set } from 'firebase/database';
 import styles from './page.module.css';
 
-// ====== 每日動態文案與按鈕設定 ======
+// ====== 每日動態主題與按鈕設定 ======
 const dailyData = [
   // 週日 (0)
-  { kicker: "BUON GIORNO, GELATO LOVER", flavor: "許願口味", desc: "每天新鮮製作，讓一口冰涼的義式風味，替今天留下一點甜。", btnText: "來去許願看看", btnAction: "wish" },
+  { 
+    title: "今天想來點特別的嗎？", 
+    desc: "寫下你的願望，也許明天就會出現在冰櫃裡！", 
+    btnText: "來去許願看看", 
+    btnAction: "wish" 
+  },
   // 週一 (1)
-  { kicker: "BUON LUNEDI, GELATO LOVER", flavor: "開心果口味", desc: "開啟一週的活力！今天要不要來許願一下，說不定明天就吃得到？", btnText: "來去許願看看", btnAction: "wish" },
+  { 
+    title: "新的一週，來點甜蜜的開始吧！", 
+    desc: "用一口冰涼的義式風味，為忙碌的星期一注入滿滿活力。", 
+    btnText: "查看今日口味", 
+    btnAction: "menu" 
+  },
   // 週二 (2) - 店休日
-  { kicker: "OGGI È CHIUSO", flavor: "店休中", desc: "今天店休喔！但我們 24/7 都在線上，有任何問題都可以透過文字對話詢問我們。", btnText: "開啟線上詢問", btnAction: "inquiry" },
+  { 
+    title: "今天店休中", 
+    desc: "但我們 24/7 都在線上，有任何問題都可以透過文字對話詢問我們。", 
+    btnText: "開啟線上詢問", 
+    btnAction: "inquiry" 
+  },
   // 週三 (3)
-  { kicker: "BUON MERCOLEDI, GELATO LOVER", flavor: "巧克力口味", desc: "濃郁可可，是熬過一半工作週的最佳獎勵。", btnText: "來去許願看看", btnAction: "wish" },
+  { 
+    title: "小週末，來點濃郁的獎勵！", 
+    desc: "熬過了一半的工作週，用濃郁的可可或提拉米蘇犒賞自己吧。", 
+    btnText: "查看今日口味", 
+    btnAction: "menu" 
+  },
   // 週四 (4)
-  { kicker: "BUON GIOVEDI, GELATO LOVER", flavor: "檸檬口味", desc: "清爽的檸檬雪酪，掃除一週的疲憊感。", btnText: "來去許願看看", btnAction: "wish" },
+  { 
+    title: "清爽一下，掃除疲憊！", 
+    desc: "來點酸甜的檸檬雪酪，為即將到來的週末做好準備。", 
+    btnText: "查看今日口味", 
+    btnAction: "menu" 
+  },
   // 週五 (5)
-  { kicker: "BUON VENERDI, GELATO LOVER", flavor: "提拉米蘇口味", desc: "週末即將到來，先享受一口經典的義式甜蜜。", btnText: "來去許願看看", btnAction: "wish" },
+  { 
+    title: "週末狂歡前，先來一球！", 
+    desc: "經典的義式甜蜜，為你揭開美好週末的序幕。", 
+    btnText: "查看今日口味", 
+    btnAction: "menu" 
+  },
   // 週六 (6)
-  { kicker: "BUON SABATO, GELATO LOVER", flavor: "芒果口味", desc: "悠閒的假日，就用熱帶水果的香甜來慶祝吧！", btnText: "來去許願看看", btnAction: "wish" }
+  { 
+    title: "悠閒的假日時光", 
+    desc: "就用熱帶水果的香甜，陪你度過美好的週末午後。", 
+    btnText: "查看今日口味", 
+    btnAction: "menu" 
+  }
 ];
 // ===================================
 
@@ -271,10 +306,12 @@ export default function Home() {
     if (tab === 'orders') loadOrders();
   };
 
-  // 🔴 處理首頁按鈕的點擊事件
+  // 處理首頁按鈕的點擊事件
   const handleMainButtonClick = () => {
     if (todayContent.btnAction === 'wish') {
       switchTab('member'); // 跳轉到會員頁面的許願池
+    } else if (todayContent.btnAction === 'menu') {
+      window.location.href = '/menu/'; // 前往菜單頁面
     } else if (todayContent.btnAction === 'inquiry') {
       // 這裡未來可以替換成開啟客服對話小軟體的程式碼
       window.alert('☕ 店休中！客服小幫手正在趕來的路上。\n\n未來這裡會開啟 24/7 線上文字對話功能，敬請期待！');
@@ -381,16 +418,15 @@ export default function Home() {
           <div className={styles.homeView}>
             <section className={styles.heroCard}>
               <div className={styles.heroCopy}>
-                {/* 每日動態文案 */}
-                <p className={styles.kicker}>{todayContent.kicker}</p>
-                <h1>今天～<br /><em>要不..試看看</em>{todayContent.flavor}</h1>
+                
+                {/* 每日動態主題 */}
+                <h1>{todayContent.title}</h1>
                 <p className={styles.heroDescription}>{todayContent.desc}</p>
                 
-                {/* 🔴 動態按鈕：會根據今天星期幾改變文字與行為 */}
+                {/* 動態按鈕：會根據今天星期幾改變文字與行為 */}
                 <button type="button" className={styles.primaryButton} onClick={handleMainButtonClick}>
                   {todayContent.btnText}<span>↗</span>
                 </button>
-                {/* ================================== */}
                 
               </div>
               <div className={styles.heroArt} aria-hidden="true">
