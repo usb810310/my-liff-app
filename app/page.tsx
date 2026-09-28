@@ -1,22 +1,28 @@
 'use client';
 
 import { startTransition, useEffect, useEffectEvent, useRef, useState } from 'react';
-
 import Image from 'next/image';
 import liff from '@line/liff';
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getDatabase, get, limitToLast, onValue, push, query, ref, set } from 'firebase/database';
 import styles from './page.module.css';
 
-// ====== 新增：每日動態文案設定 ======
+// ====== 每日動態文案與按鈕設定 ======
 const dailyData = [
-  { kicker: "BUON GIORNO, GELATO LOVER", flavor: "許願口味", desc: "每天新鮮製作，讓一口冰涼的義式風味，替今天留下一點甜。" }, // 週日 (0)
-  { kicker: "BUON LUNEDI, GELATO LOVER", flavor: "開心果口味", desc: "開啟一週的活力，用濃郁的堅果香氣提振精神！" }, // 週一 (1)
-  { kicker: "BUON MARTEDI, GELATO LOVER", flavor: "草莓口味", desc: "酸甜的草莓果肉，讓平凡的日子多一點粉紅泡泡。" }, // 週二 (2)
-  { kicker: "BUON MERCOLEDI, GELATO LOVER", flavor: "巧克力口味", desc: "濃郁可可，是熬過一半工作週的最佳獎勵。" }, // 週三 (3)
-  { kicker: "BUON GIOVEDI, GELATO LOVER", flavor: "檸檬口味", desc: "清爽的檸檬雪酪，掃除一週的疲憊感。" }, // 週四 (4)
-  { kicker: "BUON VENERDI, GELATO LOVER", flavor: "提拉米蘇口味", desc: "週末即將到來，先享受一口經典的義式甜蜜。" }, // 週五 (5)
-  { kicker: "BUON SABATO, GELATO LOVER", flavor: "芒果口味", desc: "悠閒的假日，就用熱帶水果的香甜來慶祝吧！" }  // 週六 (6)
+  // 週日 (0)
+  { kicker: "BUON GIORNO, GELATO LOVER", flavor: "許願口味", desc: "每天新鮮製作，讓一口冰涼的義式風味，替今天留下一點甜。", btnText: "來去許願看看", btnAction: "wish" },
+  // 週一 (1)
+  { kicker: "BUON LUNEDI, GELATO LOVER", flavor: "開心果口味", desc: "開啟一週的活力！今天要不要來許願一下，說不定明天就吃得到？", btnText: "來去許願看看", btnAction: "wish" },
+  // 週二 (2) - 店休日
+  { kicker: "OGGI È CHIUSO", flavor: "店休中", desc: "今天店休喔！但我們 24/7 都在線上，有任何問題都可以透過文字對話詢問我們。", btnText: "開啟線上詢問", btnAction: "inquiry" },
+  // 週三 (3)
+  { kicker: "BUON MERCOLEDI, GELATO LOVER", flavor: "巧克力口味", desc: "濃郁可可，是熬過一半工作週的最佳獎勵。", btnText: "來去許願看看", btnAction: "wish" },
+  // 週四 (4)
+  { kicker: "BUON GIOVEDI, GELATO LOVER", flavor: "檸檬口味", desc: "清爽的檸檬雪酪，掃除一週的疲憊感。", btnText: "來去許願看看", btnAction: "wish" },
+  // 週五 (5)
+  { kicker: "BUON VENERDI, GELATO LOVER", flavor: "提拉米蘇口味", desc: "週末即將到來，先享受一口經典的義式甜蜜。", btnText: "來去許願看看", btnAction: "wish" },
+  // 週六 (6)
+  { kicker: "BUON SABATO, GELATO LOVER", flavor: "芒果口味", desc: "悠閒的假日，就用熱帶水果的香甜來慶祝吧！", btnText: "來去許願看看", btnAction: "wish" }
 ];
 // ===================================
 
@@ -158,16 +164,16 @@ export default function Home() {
   const [initAttempt, setInitAttempt] = useState(0);
   const autoPayStarted = useRef(false);
 
-  // ====== 新增：每日動態文案的狀態 ======
+  // ====== 每日動態文案的狀態 ======
   const [todayContent, setTodayContent] = useState(dailyData[0]);
-  // ===================================
+  // ==============================
 
-  // ====== 新增：在瀏覽器載入後，根據今天星期幾更新文案 ======
+  // ====== 在瀏覽器載入後，根據今天星期幾更新文案與按鈕 ======
   useEffect(() => {
     const todayIndex = new Date().getDay();
     setTodayContent(dailyData[todayIndex]);
   }, []);
-  // =======================================================
+  // ==================================================
 
   useEffect(() => {
     let cancelled = false;
@@ -263,6 +269,16 @@ export default function Home() {
   const switchTab = (tab: 'home' | 'orders' | 'member') => {
     setActiveTab(tab);
     if (tab === 'orders') loadOrders();
+  };
+
+  // 🔴 處理首頁按鈕的點擊事件
+  const handleMainButtonClick = () => {
+    if (todayContent.btnAction === 'wish') {
+      switchTab('member'); // 跳轉到會員頁面的許願池
+    } else if (todayContent.btnAction === 'inquiry') {
+      // 這裡未來可以替換成開啟客服對話小軟體的程式碼
+      window.alert('☕ 店休中！客服小幫手正在趕來的路上。\n\n未來這裡會開啟 24/7 線上文字對話功能，敬請期待！');
+    }
   };
 
   const retryLiff = () => {
@@ -365,12 +381,17 @@ export default function Home() {
           <div className={styles.homeView}>
             <section className={styles.heroCard}>
               <div className={styles.heroCopy}>
-                {/* ====== 修改處：將原本寫死的文字改為 todayContent 變數 ====== */}
+                {/* 每日動態文案 */}
                 <p className={styles.kicker}>{todayContent.kicker}</p>
                 <h1>今天～<br /><em>要不..試看看</em>{todayContent.flavor}</h1>
                 <p className={styles.heroDescription}>{todayContent.desc}</p>
-                {/* ========================================================== */}
-                <a className={styles.primaryButton} href="/menu/">來去許願看看<span>↗</span></a>
+                
+                {/* 🔴 動態按鈕：會根據今天星期幾改變文字與行為 */}
+                <button type="button" className={styles.primaryButton} onClick={handleMainButtonClick}>
+                  {todayContent.btnText}<span>↗</span>
+                </button>
+                {/* ================================== */}
+                
               </div>
               <div className={styles.heroArt} aria-hidden="true">
                 <div className={styles.sunShape} />
