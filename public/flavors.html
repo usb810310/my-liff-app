@@ -241,6 +241,33 @@ body {
   box-shadow: 0 0 12px rgba(206, 43, 55, 0.15), 0 0 12px rgba(0, 146, 70, 0.15);
 }
 
+.hourglass-flip {
+  display: inline-block;
+  position: relative;
+  width: 1em;
+  height: 1em;
+  vertical-align: middle;
+  perspective: 300px;
+  transform-style: preserve-3d;
+  animation: hourglassRotate 2s linear infinite;
+}
+.glass-face,
+.glass-back {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backface-visibility: hidden;
+  font-size: 12px;
+}
+.glass-back { transform: rotateY(180deg); }
+@keyframes hourglassRotate {
+  0%   { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
+
+
 /* ===== 頁面標題 ===== */
 .page-title {
   text-align: center;
@@ -518,6 +545,14 @@ body {
   </div>
 
   <div class="footer">©2026 OMG!Gelato·口味同步系統供查看，實際以現場供應為準</div>
+  <div class="sync-badge" id="syncBadge">
+  <span class="hourglass-flip">
+    <span class="glass-face">⌛</span>
+    <span class="glass-back">⏳</span>
+  </span>
+  <span class="indicator connecting" id="indicatorDot"></span>
+  <span class="sync-label" id="syncText">同步中...</span>
+</div>
 </div>
 
 <script
