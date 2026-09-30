@@ -11,12 +11,44 @@ export function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
+type IncomingItem = {
+  name?: string;
+  qty?: number;
+  price?: number;
+  flavorDisplay?: string;
+};
+
+function formatItemLine(item: IncomingItem) {
+  const qty = item.qty && item.qty > 1 ? ` × ${item.qty}` : '';
+  const flavor = item.flavorDisplay ? ` · ${item.flavorDisplay}` : '';
+  return `${item.name || '冰淇淋'}${qty}${flavor}`;
+}
+
+function buildPickupLabel(pickupDay?: string, pickupTime?: string) {
+  if (pickupDay && pickupTime) {
+    return `${pickupDay === 'tomorrow' ? '明天' : '今天'} ${pickupTime}`;
+  }
+  return '';
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { orderText, orderNo, pickupNo, pickupNumber, userId } = body;
-    const safeOrderText = orderText?.trim() || '訂單內容請見詳情';
+    const {
+      orderText,
+      orderNo,
+      pickupNo,
+      pickupNumber,
+      userId,
+      items = [],
+      total,
+      pickupDay,
+      pickupTime,
+    } = body;
+
+    const safeOrderText = orderText?.trim() || '';
     const customerPickupNumber = pickupNumber || pickupNo || '待分配';
+    const pickupLabel = buildPickupLabel(pickupDay, pickupTime);
 
     const CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
     const liveOrderUrl = new URL(getLiffReturnUrl());
@@ -31,7 +63,79 @@ export async function POST(request: Request) {
       );
     }
 
-    // 建立客人端的 Flex Message 卡片
+    const detailContents: Record<string, unknown>[] = [];
+
+    if (Array.isArray(items) && items.length) {
+      detailContents.push({
+        type: 'text',
+        text: '您的點選配置',
+        size: 'sm',
+        weight: 'bold',
+        color: '#292521',
+        margin: 'lg',
+      });
+
+      items.forEach((item: IncomingItem, idx: number) => {
+        const lineTotal = item.price != null ? Number(item.price) * (item.qty || 1) : null;
+        detailContents.push({
+          type: 'box',
+          layout: 'horizontal',
+          margin: idx === 0 ? 'sm' : 'xs',
+          contents: [
+            {
+              type: 'text',
+              text: `• ${formatItemLine(item)}`,
+              size: 'sm',
+              color: '#333333',
+              wrap: true,
+              flex: 4,
+            },
+            ...(lineTotal != null
+              ? [{
+                  type: 'text',
+                  text: `$${lineTotal.toFixed(0)}`,
+                  size: 'sm',
+                  color: '#897c70',
+                  align: 'end',
+                  flex: 1,
+                }]
+              : []),
+          ],
+        });
+      });
+    } else if (safeOrderText) {
+      detailContents.push({
+        type: 'text',
+        text: safeOrderText,
+        wrap: true,
+        size: 'xs',
+        color: '#666666',
+        margin: 'md',
+      });
+    }
+
+    if (total != null && Number(total) > 0) {
+      detailContents.push(
+        { type: 'separator', margin: 'lg' },
+        {
+          type: 'box',
+          layout: 'horizontal',
+          margin: 'md',
+          contents: [
+            { type: 'text', text: '合計', size: 'sm', color: '#292521', weight: 'bold' },
+            {
+              type: 'text',
+              text: `$${Number(total).toFixed(0)}`,
+              size: 'lg',
+              color: '#d75b4f',
+              weight: 'bold',
+              align: 'end',
+            },
+          ],
+        },
+      );
+    }
+
     const customerCard = {
       type: 'flex',
       altText: `✅ 訂單已收到！取餐編號 ${customerPickupNumber}`,
@@ -53,10 +157,43 @@ export async function POST(request: Request) {
           spacing: 'md',
           contents: [
             { type: 'text', text: '我們會盡快為您準備！', wrap: true, size: 'md', color: '#333333' },
-            { type: 'text', text: `取餐編號：${customerPickupNumber}`, weight: 'bold', size: 'xl', color: '#06C755', margin: 'md' },
-            { type: 'text', text: `線上訂單編號：${orderNo || '—'}`, size: 'sm', color: '#666666', margin: 'sm' },
-            { type: 'separator' },
-            { type: 'text', text: safeOrderText, wrap: true, size: 'xs', color: '#666666' },
+            {
+              type: 'text',
+              text: `取餐編號：${customerPickupNumber}`,
+              weight: 'bold',
+              size: 'xl',
+              color: '#06C755',
+              margin: 'md',
+            },
+            {
+              type: 'text',
+              text: `線上訂單編號：${orderNo || '—'}`,
+              size: 'sm',
+              color: '#666666',
+              margin: 'sm',
+            },
+            ...(pickupLabel
+              ? [
+                  { type: 'separator', margin: 'lg' },
+                  {
+                    type: 'box',
+                    layout: 'vertical',
+                    margin: 'md',
+                    contents: [
+                      { type: 'text', text: '取餐時間', size: 'xs', color: '#897c70' },
+                      {
+                        type: 'text',
+                        text: pickupLabel,
+                        size: 'md',
+                        weight: 'bold',
+                        color: '#292521',
+                        margin: 'xs',
+                      },
+                    ],
+                  },
+                ]
+              : []),
+            ...detailContents,
           ],
         },
         footer: {
@@ -94,7 +231,6 @@ export async function POST(request: Request) {
 
     let customerError: string | null = null;
 
-    // 只通知客人（不再通知店家）
     if (userId) {
       const res = await fetch('https://api.line.me/v2/bot/message/push', {
         method: 'POST',
