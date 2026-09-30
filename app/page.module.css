@@ -92,3 +92,76 @@
 .statusNoticeRejected p { margin: 0; color: #ae766d; font-size: 10px; line-height: 1.45; }
 @keyframes statusPulse { 0%, 100% { opacity: .55; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.08); } }
 @media (prefers-reduced-motion: reduce) { .liveStatusDot { animation: none; } }
+
+
+/* === 訂單列表項目（可點擊卡片） === */
+.orderListItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 18px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.orderListItem:active { transform: scale(0.985); }
+.orderListItem:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06); }
+
+.orderListMain {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0 12px;
+}
+.orderListInfo h3 { margin: 0 0 4px; font-size: 16px; }
+.orderListPreview {
+  margin: 0;
+  font-size: 13px;
+  color: #6b6b6b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60vw;
+}
+.orderListTotal { font-size: 18px; }
+
+.orderListFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+  padding-top: 10px;
+}
+.paymentBadge {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.05);
+}
+.orderListArrow { font-size: 13px; color: #2f8a5b; }
+
+/* === 單張訂單頁 === */
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  padding: 6px 0 14px;
+  font: inherit;
+  font-size: 14px;
+  color: #2f8a5b;
+  cursor: pointer;
+}
+.orderDetailCard {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 20px;
+  padding: 20px;
+}
