@@ -15,6 +15,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { orderText, orderNo, pickupNo, pickupNumber, userId } = body;
+    const safeOrderText = orderText?.trim() || '訂單內容請見詳情';
     const customerPickupNumber = pickupNumber || pickupNo || '待分配';
 
     const CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
@@ -38,17 +39,24 @@ export async function POST(request: Request) {
         type: 'bubble',
         size: 'mega',
         header: {
-          type: 'box', layout: 'vertical', backgroundColor: '#06C755', paddingAll: '16px',
-          contents: [{ type: 'text', text: '✅ 訂單已收到！', color: '#ffffff', weight: 'bold', size: 'xl' }],
+          type: 'box',
+          layout: 'vertical',
+          backgroundColor: '#06C755',
+          paddingAll: '16px',
+          contents: [
+            { type: 'text', text: '✅ 訂單已收到！', color: '#ffffff', weight: 'bold', size: 'xl' },
+          ],
         },
         body: {
-          type: 'box', layout: 'vertical', spacing: 'md',
+          type: 'box',
+          layout: 'vertical',
+          spacing: 'md',
           contents: [
             { type: 'text', text: '我們會盡快為您準備！', wrap: true, size: 'md', color: '#333333' },
             { type: 'text', text: `取餐編號：${customerPickupNumber}`, weight: 'bold', size: 'xl', color: '#06C755', margin: 'md' },
             { type: 'text', text: `線上訂單編號：${orderNo || '—'}`, size: 'sm', color: '#666666', margin: 'sm' },
             { type: 'separator' },
-            { type: 'text', text: orderText, wrap: true, size: 'xs', color: '#666666' },
+            { type: 'text', text: safeOrderText, wrap: true, size: 'xs', color: '#666666' },
           ],
         },
         footer: {
@@ -90,7 +98,10 @@ export async function POST(request: Request) {
     if (userId) {
       const res = await fetch('https://api.line.me/v2/bot/message/push', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CHANNEL_ACCESS_TOKEN}` },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${CHANNEL_ACCESS_TOKEN}`,
+        },
         body: JSON.stringify({ to: userId, messages: [customerCard] }),
       });
       if (!res.ok) {
