@@ -2095,10 +2095,9 @@
             createOrderSubmitLock();
             setOrderSubmitting(true);
             closePickupModal();
-            // ★★★ 修改：改存絕對日期，例如 2026/09/28 20:00 ★★★
-            const pickupDate = getPickupDateStr(selectedDate);
-            const pickupText = `${pickupDate} ${selectedSlot}`;
-            await sendOrderToLine(pickupText);
+            const pickupAbs = `${getPickupDateStr(selectedDate)} ${selectedSlot}`;
+            const pickupRel = `${selectedDate === 'tomorrow' ? '明天' : '今天'} ${selectedSlot}`;
+            await sendOrderToLine(pickupAbs, pickupRel);
         });
 
         pickupModalCancel.addEventListener('click', closePickupModal);
@@ -2612,40 +2611,50 @@
                 
                 const pickupDay = pickupRel.includes('明天') ? 'tomorrow' : 'today';
                 const pickupTime = pickupRel.replace(/今天|明天/g, '').trim();
-                
-                const response = await fetch('/api/notify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        orderText: body,
-                        orderNo,
-                        pickupNo,
-                        pickupNumber: pickupNo,
-                        memberNo: memberProfile.memberNo,
-                        phone: memberProfile.phone || null,
-                        userId: memberProfile.lineUserId || null,
-                        displayName: memberProfile.displayName || null,
-                        pictureUrl: window.liffPictureUrl || null,
-                        items: itemsForFirebase,
-                        total,
-                        pickupDay,
-                        pickupTime,
-
-                    }),
-                });
-                const result = await response.json().catch(() => ({}));
-                if (!response.ok || result.success === false || result.warning) {
-                    throw new Error(result.error || result.warning || `通知失敗（HTTP ${response.status}）`);
+                let notificationWarning = '';
+                try {
+                    const response = await fetch('/api/notify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            orderText: body,
+                            orderNo,
+                            pickupNo,
+                            pickupNumber: pickupNo,
+                            memberNo: memberProfile.memberNo,
+                            phone: memberProfile.phone || null,
+                            userId: memberProfile.lineUserId || null,
+                            displayName: memberProfile.displayName || null,
+                            pictureUrl: window.liffPictureUrl || null,
+                            items: itemsForFirebase,
+                            total,
+                            pickupDay,
+                            pickupTime,
+                        }),
+                    });
+                    const result = await response.json().catch(() => ({}));
+                    if (!response.ok || result.success === false || result.warning) {
+                        throw new Error(result.error || result.warning || `通知失敗（HTTP ${response.status}）`);
+                    }
+                } catch (error) {
+                    console.error('訂單已建立，但 LINE 通知失敗:', error);
+                    notificationWarning = error instanceof Error ? error.message : '通知服務暫時無法使用';
                 }
 
                 clearAll(false);
-                showToast('訂單已送出，購物車已清空', '✅');
+                showToast(
+                    notificationWarning
+                        ? `訂單已送出；LINE 通知失敗：${notificationWarning}`
+                        : '訂單已送出，購物車已清空',
+                    notificationWarning ? '⚠️' : '✅',
+                );
                 window.setTimeout(() => {
                     window.location.assign('/');
-                }, 1800);
+                }, notificationWarning ? 4000 : 1800);
             } catch (err) {
                 console.error('訂單送出失敗:', err);
-                showToast('發送失敗，請稍後再試', '❌');
+                const errorMessage = err instanceof Error ? err.message : '未知錯誤';
+                showToast(`送單時發生錯誤，請先至訂單頁確認，避免重複下單：${errorMessage}`, '❌');
             } finally {
                 clearOrderSubmitLock();
                 setOrderSubmitting(false);
