@@ -86,8 +86,6 @@ export async function POST(request: Request) {
     }
 
     const totalValue = total != null ? Number(total) : 0;
-    // 此卡片在付款前送出，LINE Pay 付款完成後狀態以「我的訂單」為準
-    const payLabel = payMethod === 'linepay' ? 'LINE Pay' : '現場付款';
     const titleText = pickupLabel ? `您已送出訂單 ${pickupLabel} 取餐` : '您已送出訂單';
 
     const customerCard = {
@@ -117,24 +115,19 @@ export async function POST(request: Request) {
                 { type: 'text', text: `合計 $${totalValue.toFixed(0)}`, size: 'md', weight: 'bold', color: '#111111', align: 'end', flex: 1 },
               ],
             },
+          ],
+        },
+        footer: {
+          type: 'box',
+          layout: 'vertical',
+          paddingAll: '12px',
+          contents: [
             {
-              type: 'box',
-              layout: 'horizontal',
-              margin: 'md',
-              alignItems: 'center',
-              contents: [
-                { type: 'text', text: payLabel, size: 'md', color: '#111111', flex: 1 },
-                {
-                  type: 'text',
-                  text: '[查看訂單]',
-                  size: 'md',
-                  weight: 'bold',
-                  color: '#2F5BEA',
-                  align: 'end',
-                  flex: 1,
-                  action: { type: 'uri', label: '查看訂單', uri: liveOrderUrl.toString() },
-                },
-              ],
+              type: 'button',
+              style: 'primary',
+              height: 'sm',
+              color: '#2F5BEA',
+              action: { type: 'uri', label: '查看訂單狀態', uri: liveOrderUrl.toString() },
             },
           ],
         },
