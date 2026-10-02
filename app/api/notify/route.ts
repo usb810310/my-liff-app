@@ -57,22 +57,25 @@ export async function POST(request: Request) {
     }
 
     const itemRows: Record<string, unknown>[] = [];
+    let itemCount = 0;
     (Array.isArray(items) ? (items as IncomingItem[]) : []).forEach((item) => {
       const qty = item.qty && item.qty > 1 ? ` × ${item.qty}` : '';
+      itemCount += item.qty || 1;
       const lineTotal = item.price != null ? Number(item.price) * (item.qty || 1) : null;
       itemRows.push({
         type: 'box',
         layout: 'horizontal',
         margin: 'md',
         contents: [
-          { type: 'text', text: `${item.name || '冰淇淋'}${qty}`, size: 'md', weight: 'bold', color: '#111111', wrap: true, flex: 5 },
+          { type: 'text', text: `${item.name || '冰淇淋'}${qty}`, size: 'md', color: '#111111', wrap: true, flex: 5 },
           ...(lineTotal != null
-            ? [{ type: 'text', text: `$${lineTotal.toFixed(0)}`, size: 'md', weight: 'bold', color: '#111111', align: 'end', gravity: 'top', flex: 2 }]
+            ? [{ type: 'text', text: `$${lineTotal.toFixed(0)}`, size: 'md', color: '#111111', align: 'end', gravity: 'top', flex: 2 }]
             : []),
         ],
       });
       if (item.flavorDisplay) {
-        itemRows.push({ type: 'text', text: item.flavorDisplay, size: 'sm', color: '#444444', wrap: true, margin: 'xs', offsetStart: '12px' });
+        const flavorText = item.flavorDisplay.split(/\s*\+\s*/).join('＋');
+        itemRows.push({ type: 'text', text: flavorText, size: 'sm', color: '#444444', wrap: true, margin: 'xs' });
       }
     });
     if (!itemRows.length && safeOrderText) {
@@ -80,12 +83,13 @@ export async function POST(request: Request) {
     }
 
     const totalValue = total != null ? Number(total) : 0;
-    const payLabel = payMethod === 'linepay' ? 'LINE Pay' : '現場付款';
-    const titleText = pickupLabel ? `已收到您訂單：${pickupLabel}取餐` : '已收到您訂單';
+    // 此卡片在付款前送出，LINE Pay 付款完成後狀態以「我的訂單」為準
+    const payLabel = payMethod === 'linepay' ? 'LINE Pay 待付款' : '現場付款';
+    const titleText = pickupLabel ? `您已送出訂單 ${pickupLabel} 取餐` : '您已送出訂單';
 
     const customerCard = {
       type: 'flex',
-      altText: `已收到您訂單，取餐號碼 ${customerPickupNumber}`,
+      altText: `您已送出訂單，取餐號碼 ${customerPickupNumber}`,
       contents: {
         type: 'bubble',
         size: 'mega',
@@ -95,10 +99,9 @@ export async function POST(request: Request) {
           paddingAll: '20px',
           spacing: 'none',
           contents: [
-            { type: 'text', text: titleText, size: 'lg', weight: 'bold', color: '#111111', wrap: true, decoration: 'underline' },
-            { type: 'text', text: `取餐號碼：${customerPickupNumber}`, size: 'md', weight: 'bold', color: '#111111', margin: 'md' },
-            { type: 'text', text: `線上訂單編號：${orderNo || '—'}`, size: 'md', weight: 'bold', color: '#111111', wrap: true, margin: 'sm' },
-            { type: 'text', text: `付款方式：${payLabel}`, size: 'md', weight: 'bold', color: '#111111', margin: 'sm' },
+            { type: 'text', text: titleText, size: 'lg', weight: 'bold', color: '#111111', wrap: true },
+            { type: 'text', text: `線上訂單編號：${orderNo || '—'}`, size: 'xs', color: '#555555', wrap: true, margin: 'sm' },
+            { type: 'text', text: `取餐號碼：${customerPickupNumber}`, size: 'xxl', weight: 'bold', style: 'italic', color: '#2F5BEA', margin: 'md' },
             { type: 'separator', margin: 'lg', color: '#111111' },
             ...itemRows,
             { type: 'separator', margin: 'lg', color: '#111111' },
@@ -107,23 +110,28 @@ export async function POST(request: Request) {
               layout: 'horizontal',
               margin: 'lg',
               contents: [
-                { type: 'text', text: '合計', size: 'md', weight: 'bold', color: '#111111', flex: 5 },
-                { type: 'text', text: `$${totalValue.toFixed(0)}`, size: 'md', weight: 'bold', color: '#111111', align: 'end', flex: 2 },
+                { type: 'text', text: `共 ${itemCount} 項`, size: 'md', color: '#111111', flex: 1 },
+                { type: 'text', text: `合計 $${totalValue.toFixed(0)}`, size: 'md', weight: 'bold', color: '#111111', align: 'end', flex: 1 },
               ],
             },
-          ],
-        },
-        footer: {
-          type: 'box',
-          layout: 'vertical',
-          paddingAll: '8px',
-          contents: [
             {
-              type: 'button',
-              style: 'link',
-              height: 'sm',
-              color: '#111111',
-              action: { type: 'uri', label: '查看訂單', uri: liveOrderUrl.toString() },
+              type: 'box',
+              layout: 'horizontal',
+              margin: 'md',
+              alignItems: 'center',
+              contents: [
+                { type: 'text', text: payLabel, size: 'md', color: '#111111', flex: 1 },
+                {
+                  type: 'text',
+                  text: '[查看訂單]',
+                  size: 'md',
+                  weight: 'bold',
+                  color: '#2F5BEA',
+                  align: 'end',
+                  flex: 1,
+                  action: { type: 'uri', label: '查看訂單', uri: liveOrderUrl.toString() },
+                },
+              ],
             },
           ],
         },
