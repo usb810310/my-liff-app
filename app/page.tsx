@@ -65,7 +65,7 @@ function getStatusMeta(order: Order) {
   if (['completed', '已完成'].includes(status)) return { key: 'completed' as const, label: '訂單已完成', hint: '謝謝你的光臨，期待下次見。' };
   if (['ready', '可取餐'].includes(status)) return { key: 'ready' as const, label: '可以取餐', hint: '請依取餐編號到店取餐。' };
   if (['preparing', '製作中'].includes(status)) return { key: 'preparing' as const, label: '製作中', hint: '店家正在為你準備冰淇淋。' };
-  if (['accepted', 'confirmed', '已確認', '接單'].includes(status)) return { key: 'accepted' as const, label: '店家已接單', hint: '訂單已進入製作流程。' };
+  if (['accepted', '接單'].includes(status)) return { key: 'accepted' as const, label: '店家已接單', hint: '訂單已進入製作流程。' };
   return { key: 'waiting' as const, label: '等待店家接單', hint: '訂單已送出，店家確認後會立即更新。' };
 }
 
@@ -145,7 +145,8 @@ function OrderDetailCard({
   onPay: (order: Order) => void;
 }) {
   const paymentStatus = getPaymentStatus(order);
-  const canPay = !order.voided && ['尚未付款', '付款失敗'].includes(paymentStatus);
+  const isOnsitePayment = order.payment === '現場付款';
+  const canPay = !order.voided && !isOnsitePayment && ['尚未付款', '付款失敗'].includes(paymentStatus);
   const cancelled = order.voided || order.rejected;
 
   return (
@@ -176,7 +177,7 @@ function OrderDetailCard({
       </div>
 
       <div className={styles.paymentRow}>
-        <span>LINE Pay <b>{paymentStatus}</b></span>
+        <span>{isOnsitePayment ? '現場付款' : 'LINE Pay'} <b>{isOnsitePayment && paymentStatus === '尚未付款' ? '到店付款' : paymentStatus}</b></span>
         {canPay && (
           <button
             className={styles.linePayButton}

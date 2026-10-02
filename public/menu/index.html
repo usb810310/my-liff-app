@@ -1272,6 +1272,31 @@
             cursor: not-allowed;
         }
 
+        .pay-options { display: flex; flex-direction: column; gap: 10px; margin: 8px 0 4px; }
+        .pay-option {
+            display: grid;
+            grid-template-columns: 40px minmax(0, 1fr) 16px;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border-light);
+            border-radius: 18px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            text-align: left;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .pay-option:active { transform: scale(0.98); }
+        .pay-option:disabled { opacity: 0.45; cursor: not-allowed; }
+        .pay-option-icon { font-size: 26px; text-align: center; }
+        .pay-option-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .pay-option-text b { font-size: 17px; }
+        .pay-option-text small { font-size: 12px; color: var(--text-muted); }
+        .pay-option-arrow { font-size: 22px; color: var(--text-muted); }
+        .pay-option-linepay { border-color: #06C755; }
+
         .floating-toast {
             position: fixed;
             top: 24px;
@@ -1599,6 +1624,33 @@
             <div class="modal-actions">
                 <button class="btn-cancel" id="pickupModalCancel">取消</button>
                 <button class="btn-confirm" id="pickupModalConfirm" disabled>確認取餐</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 付款方式 Modal ===== -->
+    <div class="modal-overlay" id="payModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>💳 選擇付款方式</h3>
+                <button class="modal-close" id="payModalClose">✕</button>
+            </div>
+            <div class="modal-sub" id="paySummary">請選擇付款方式</div>
+            <div class="pay-options">
+                <button type="button" class="pay-option" data-pay="onsite">
+                    <span class="pay-option-icon">🏪</span>
+                    <span class="pay-option-text"><b>現場付款</b><small>到店取餐時再付款</small></span>
+                    <span class="pay-option-arrow">›</span>
+                </button>
+                <button type="button" class="pay-option pay-option-linepay" data-pay="linepay">
+                    <span class="pay-option-icon">💚</span>
+                    <span class="pay-option-text"><b>LINE Pay</b><small>線上付款，取餐更快速</small></span>
+                    <span class="pay-option-arrow">›</span>
+                </button>
+            </div>
+            <div class="modal-error" id="payError"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="payModalBack">返回選時間</button>
             </div>
         </div>
     </div>
@@ -2086,19 +2138,53 @@
             });
         });
 
-        pickupModalConfirm.addEventListener('click', async () => {
+        const payModal = document.getElementById('payModal');
+        const payError = document.getElementById('payError');
+        const paySummary = document.getElementById('paySummary');
+        let pendingPickup = null;
+
+        function openPayModal() {
+            const linePayBtn = payModal.querySelector('[data-pay="linepay"]');
+            const canLinePay = Boolean(window.liffUserId);
+            linePayBtn.disabled = !canLinePay;
+            linePayBtn.querySelector('small').textContent = canLinePay ? '線上付款，取餐更快速' : '請從 LINE 開啟才能使用 LINE Pay';
+            paySummary.textContent = `取餐時間：${pendingPickup.rel}`;
+            payError.textContent = '';
+            payModal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePayModal() {
+            payModal.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        pickupModalConfirm.addEventListener('click', () => {
             if (pickupModalConfirm.disabled || isSubmittingOrder || hasRecentOrderSubmitLock()) return;
             if (selectedSlot === null) {
                 pickupError.textContent = '請選擇時段';
                 return;
             }
-            createOrderSubmitLock();
-            setOrderSubmitting(true);
+            pendingPickup = {
+                abs: `${getPickupDateStr(selectedDate)} ${selectedSlot}`,
+                rel: `${selectedDate === 'tomorrow' ? '明天' : '今天'} ${selectedSlot}`,
+            };
             closePickupModal();
-            const pickupAbs = `${getPickupDateStr(selectedDate)} ${selectedSlot}`;
-            const pickupRel = `${selectedDate === 'tomorrow' ? '明天' : '今天'} ${selectedSlot}`;
-            await sendOrderToLine(pickupAbs, pickupRel);
+            openPayModal();
         });
+
+        payModal.querySelectorAll('[data-pay]').forEach(button => {
+            button.addEventListener('click', async () => {
+                if (isSubmittingOrder || hasRecentOrderSubmitLock() || !pendingPickup) return;
+                createOrderSubmitLock();
+                setOrderSubmitting(true);
+                closePayModal();
+                await sendOrderToLine(pendingPickup.abs, pendingPickup.rel, button.dataset.pay);
+            });
+        });
+        document.getElementById('payModalClose').addEventListener('click', closePayModal);
+        document.getElementById('payModalBack').addEventListener('click', () => { closePayModal(); openPickupModal(); });
+        payModal.addEventListener('click', (e) => { if (e.target === payModal) closePayModal(); });
 
         pickupModalCancel.addEventListener('click', closePickupModal);
         pickupModalClose.addEventListener('click', closePickupModal);
@@ -2554,7 +2640,7 @@
             }
         }
 
-        async function sendOrderToLine(pickupAbs, pickupRel) {
+        async function sendOrderToLine(pickupAbs, pickupRel, payMethod = 'onsite') {
     const body = generateOrderText(pickupAbs, pickupRel);
             if (body === '（尚未選取）') {
                 clearOrderSubmitLock();
@@ -2594,8 +2680,9 @@
                     date: new Date().toISOString().split('T')[0],
                     items: itemsForFirebase,
                     total,
-                    payment: '待確認',
-                    paymentStatus: 'pending',
+                    payment: payMethod === 'linepay' ? 'LINE Pay' : '現場付款',
+                    paymentStatus: payMethod === 'linepay' ? 'pending' : 'unpaid',
+                    paymentMethod: payMethod === 'linepay' ? 'LINE_PAY' : 'ONSITE',
                     remark: `取餐時間：${pickupRel}（${pickupAbs}）`,
                     source: window.liffUserId ? 'LIFF' : 'WEB_GUEST',
                     voided: false,
@@ -2630,6 +2717,7 @@
                             total,
                             pickupDay,
                             pickupTime,
+                            payMethod,
                         }),
                     });
                     const result = await response.json().catch(() => ({}));
@@ -2642,14 +2730,39 @@
                 }
 
                 clearAll(false);
-                showToast(
-                    notificationWarning
-                        ? `訂單已送出；LINE 通知失敗：${notificationWarning}`
-                        : '訂單已送出，購物車已清空',
-                    notificationWarning ? '⚠️' : '✅',
-                );
+
+                if (payMethod === 'linepay') {
+                    showToast('訂單已送出，正在前往 LINE Pay…', '💚');
+                    try {
+                        const payResponse = await fetch('/api/linepay/request', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ orderNo, userId: memberProfile.lineUserId || window.liffUserId }),
+                        });
+                        const payResult = await payResponse.json().catch(() => ({}));
+                        const payUrl = window.liff && window.liff.isInClient()
+                            ? payResult.appPaymentUrl || payResult.webPaymentUrl || payResult.paymentUrl
+                            : payResult.webPaymentUrl || payResult.appPaymentUrl || payResult.paymentUrl;
+                        if (!payResponse.ok || !payUrl) throw new Error(payResult.error || 'LINE Pay 尚未開通');
+                        window.location.href = payUrl;
+                        return;
+                    } catch (payError) {
+                        console.error('LINE Pay 請求失敗:', payError);
+                        showToast('LINE Pay 暫時無法使用，可到「我的訂單」重新付款', '⚠️');
+                    }
+                } else {
+                    showToast(
+                        notificationWarning
+                            ? `訂單已送出；LINE 通知失敗：${notificationWarning}`
+                            : '訂單已送出，請到 LINE 查看訂單小卡',
+                        notificationWarning ? '⚠️' : '✅',
+                    );
+                }
+
+                // 回到 LINE 聊天室查看訂單小卡；非 LINE 內開啟則回首頁
                 window.setTimeout(() => {
-                    window.location.assign('/');
+                    if (window.liff && window.liff.isInClient()) window.liff.closeWindow();
+                    else window.location.assign('/');
                 }, notificationWarning ? 4000 : 1800);
             } catch (err) {
                 console.error('訂單送出失敗:', err);

@@ -18,12 +18,6 @@ type IncomingItem = {
   flavorDisplay?: string;
 };
 
-function formatItemLine(item: IncomingItem) {
-  const qty = item.qty && item.qty > 1 ? ` × ${item.qty}` : '';
-  const flavor = item.flavorDisplay ? ` · ${item.flavorDisplay}` : '';
-  return `${item.name || '冰淇淋'}${qty}${flavor}`;
-}
-
 function buildPickupLabel(pickupDay?: string, pickupTime?: string) {
   if (pickupDay && pickupTime) {
     return `${pickupDay === 'tomorrow' ? '明天' : '今天'} ${pickupTime}`;
@@ -44,6 +38,7 @@ export async function POST(request: Request) {
       total,
       pickupDay,
       pickupTime,
+      payMethod,
     } = body;
 
     const safeOrderText = orderText?.trim() || '';
@@ -53,8 +48,6 @@ export async function POST(request: Request) {
     const CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
     const liveOrderUrl = new URL(getLiffReturnUrl());
     liveOrderUrl.searchParams.set('orderNo', String(orderNo || ''));
-    const paymentUrl = new URL(liveOrderUrl);
-    paymentUrl.searchParams.set('action', 'pay');
 
     if (!CHANNEL_ACCESS_TOKEN) {
       return NextResponse.json(
@@ -63,166 +56,74 @@ export async function POST(request: Request) {
       );
     }
 
-    const detailContents: Record<string, unknown>[] = [];
-
-    if (Array.isArray(items) && items.length) {
-      detailContents.push({
-        type: 'text',
-        text: '您的點選配置',
-        size: 'sm',
-        weight: 'bold',
-        color: '#292521',
-        margin: 'lg',
-      });
-
-      items.forEach((item: IncomingItem, idx: number) => {
-        const lineTotal = item.price != null ? Number(item.price) * (item.qty || 1) : null;
-        detailContents.push({
-          type: 'box',
-          layout: 'horizontal',
-          margin: idx === 0 ? 'sm' : 'xs',
-          contents: [
-            {
-              type: 'text',
-              text: `• ${formatItemLine(item)}`,
-              size: 'sm',
-              color: '#333333',
-              wrap: true,
-              flex: 4,
-            },
-            ...(lineTotal != null
-              ? [{
-                  type: 'text',
-                  text: `$${lineTotal.toFixed(0)}`,
-                  size: 'sm',
-                  color: '#897c70',
-                  align: 'end',
-                  flex: 1,
-                }]
-              : []),
-          ],
-        });
-      });
-    } else if (safeOrderText) {
-      detailContents.push({
-        type: 'text',
-        text: safeOrderText,
-        wrap: true,
-        size: 'xs',
-        color: '#666666',
+    const itemRows: Record<string, unknown>[] = [];
+    (Array.isArray(items) ? (items as IncomingItem[]) : []).forEach((item) => {
+      const qty = item.qty && item.qty > 1 ? ` × ${item.qty}` : '';
+      const lineTotal = item.price != null ? Number(item.price) * (item.qty || 1) : null;
+      itemRows.push({
+        type: 'box',
+        layout: 'horizontal',
         margin: 'md',
+        contents: [
+          { type: 'text', text: `${item.name || '冰淇淋'}${qty}`, size: 'md', weight: 'bold', color: '#111111', wrap: true, flex: 5 },
+          ...(lineTotal != null
+            ? [{ type: 'text', text: `$${lineTotal.toFixed(0)}`, size: 'md', weight: 'bold', color: '#111111', align: 'end', gravity: 'top', flex: 2 }]
+            : []),
+        ],
       });
+      if (item.flavorDisplay) {
+        itemRows.push({ type: 'text', text: item.flavorDisplay, size: 'sm', color: '#444444', wrap: true, margin: 'xs', offsetStart: '12px' });
+      }
+    });
+    if (!itemRows.length && safeOrderText) {
+      itemRows.push({ type: 'text', text: safeOrderText, size: 'sm', color: '#444444', wrap: true, margin: 'md' });
     }
 
-    if (total != null && Number(total) > 0) {
-      detailContents.push(
-        { type: 'separator', margin: 'lg' },
-        {
-          type: 'box',
-          layout: 'horizontal',
-          margin: 'md',
-          contents: [
-            { type: 'text', text: '合計', size: 'sm', color: '#292521', weight: 'bold' },
-            {
-              type: 'text',
-              text: `$${Number(total).toFixed(0)}`,
-              size: 'lg',
-              color: '#d75b4f',
-              weight: 'bold',
-              align: 'end',
-            },
-          ],
-        },
-      );
-    }
+    const totalValue = total != null ? Number(total) : 0;
+    const payLabel = payMethod === 'linepay' ? 'LINE Pay' : '現場付款';
+    const titleText = pickupLabel ? `已收到您訂單：${pickupLabel}取餐` : '已收到您訂單';
 
     const customerCard = {
       type: 'flex',
-      altText: `✅ 訂單已收到！取餐編號 ${customerPickupNumber}`,
+      altText: `已收到您訂單，取餐號碼 ${customerPickupNumber}`,
       contents: {
         type: 'bubble',
         size: 'mega',
-        header: {
-          type: 'box',
-          layout: 'vertical',
-          backgroundColor: '#06C755',
-          paddingAll: '16px',
-          contents: [
-            { type: 'text', text: '✅ 訂單已收到！', color: '#ffffff', weight: 'bold', size: 'xl' },
-          ],
-        },
         body: {
           type: 'box',
           layout: 'vertical',
-          spacing: 'md',
+          paddingAll: '20px',
+          spacing: 'none',
           contents: [
-            { type: 'text', text: '我們會盡快為您準備！', wrap: true, size: 'md', color: '#333333' },
+            { type: 'text', text: titleText, size: 'lg', weight: 'bold', color: '#111111', wrap: true, decoration: 'underline' },
+            { type: 'text', text: `取餐號碼：${customerPickupNumber}`, size: 'md', weight: 'bold', color: '#111111', margin: 'md' },
+            { type: 'text', text: `線上訂單編號：${orderNo || '—'}`, size: 'md', weight: 'bold', color: '#111111', wrap: true, margin: 'sm' },
+            { type: 'text', text: `付款方式：${payLabel}`, size: 'md', weight: 'bold', color: '#111111', margin: 'sm' },
+            { type: 'separator', margin: 'lg', color: '#111111' },
+            ...itemRows,
+            { type: 'separator', margin: 'lg', color: '#111111' },
             {
-              type: 'text',
-              text: `取餐編號：${customerPickupNumber}`,
-              weight: 'bold',
-              size: 'xl',
-              color: '#06C755',
-              margin: 'md',
+              type: 'box',
+              layout: 'horizontal',
+              margin: 'lg',
+              contents: [
+                { type: 'text', text: '合計', size: 'md', weight: 'bold', color: '#111111', flex: 5 },
+                { type: 'text', text: `$${totalValue.toFixed(0)}`, size: 'md', weight: 'bold', color: '#111111', align: 'end', flex: 2 },
+              ],
             },
-            {
-              type: 'text',
-              text: `線上訂單編號：${orderNo || '—'}`,
-              size: 'sm',
-              color: '#666666',
-              margin: 'sm',
-            },
-            ...(pickupLabel
-              ? [
-                  { type: 'separator', margin: 'lg' },
-                  {
-                    type: 'box',
-                    layout: 'vertical',
-                    margin: 'md',
-                    contents: [
-                      { type: 'text', text: '取餐時間', size: 'xs', color: '#897c70' },
-                      {
-                        type: 'text',
-                        text: pickupLabel,
-                        size: 'md',
-                        weight: 'bold',
-                        color: '#292521',
-                        margin: 'xs',
-                      },
-                    ],
-                  },
-                ]
-              : []),
-            ...detailContents,
           ],
         },
         footer: {
           type: 'box',
           layout: 'vertical',
-          spacing: 'sm',
-          margin: 'lg',
+          paddingAll: '8px',
           contents: [
             {
               type: 'button',
-              style: 'primary',
-              color: '#2d1f14',
+              style: 'link',
               height: 'sm',
-              action: {
-                type: 'uri',
-                label: 'LINE Pay 線上付款',
-                uri: paymentUrl.toString(),
-              },
-            },
-            {
-              type: 'button',
-              style: 'secondary',
-              color: '#f0ebe6',
-              height: 'sm',
-              action: {
-                type: 'uri',
-                label: '查看訂單 LIVE',
-                uri: liveOrderUrl.toString(),
-              },
+              color: '#111111',
+              action: { type: 'uri', label: '查看訂單', uri: liveOrderUrl.toString() },
             },
           ],
         },
