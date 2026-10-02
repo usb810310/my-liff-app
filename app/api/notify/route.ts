@@ -84,7 +84,7 @@ export async function POST(request: Request) {
 
     const totalValue = total != null ? Number(total) : 0;
     // 此卡片在付款前送出，LINE Pay 付款完成後狀態以「我的訂單」為準
-    const payLabel = payMethod === 'linepay' ? 'LINE Pay 待付款' : '現場付款';
+    const payLabel = payMethod === 'linepay' ? 'LINE Pay' : '現場付款';
     const titleText = pickupLabel ? `您已送出訂單 ${pickupLabel} 取餐` : '您已送出訂單';
 
     const customerCard = {
