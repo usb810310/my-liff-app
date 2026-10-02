@@ -27,7 +27,7 @@ export function getLinePayConfig(): LinePayConfig {
   return {
     channelId,
     channelSecret,
-    baseUrl: process.env.LINEPAY_API_BASE || 'https://sandbox-api-pay.line.me',
+    baseUrl: process.env.LINEPAY_API_BASE || 'https://api-pay.line.me',
     merchantDeviceProfileId: process.env.LINEPAY_MERCHANT_DEVICE_PROFILE_ID,
   };
 }
