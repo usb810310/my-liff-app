@@ -2661,7 +2661,7 @@
                     itemsForFirebase.push({ name: 'OMG獨享杯', price: 100, qty: count, flavorDisplay: flavor });
                 }
                 shareBoxes.forEach((box, idx) => {
-                    itemsForFirebase.push({ name: `OMG分享盒 #${idx + 1}`, price: 420, qty: 1, flavorDisplay: box.flavors.join('+') });
+                    itemsForFirebase.push({ name: "OMG分享盒", price: 420, qty: 1, flavorDisplay: box.flavors.join('+') });
                 });
 
                 const total = itemsForFirebase.reduce((sum, item) => sum + item.price * item.qty, 0);
