@@ -58,14 +58,17 @@ export async function POST(request: Request) {
 
     const itemRows: Record<string, unknown>[] = [];
     let itemCount = 0;
-    (Array.isArray(items) ? (items as IncomingItem[]) : []).forEach((item) => {
+    (Array.isArray(items) ? (items as IncomingItem[]) : []).forEach((item, index) => {
+      if (index > 0) {
+        itemRows.push({ type: 'separator', margin: 'md', color: '#E5E5E5' });
+      }
       const qty = item.qty && item.qty > 1 ? ` × ${item.qty}` : '';
       itemCount += item.qty || 1;
       const lineTotal = item.price != null ? Number(item.price) * (item.qty || 1) : null;
       itemRows.push({
         type: 'box',
         layout: 'horizontal',
-        margin: 'md',
+        margin: index > 0 ? 'md' : 'md',
         contents: [
           { type: 'text', text: `${item.name || '冰淇淋'}${qty}`, size: 'md', color: '#111111', wrap: true, flex: 5 },
           ...(lineTotal != null
@@ -75,7 +78,7 @@ export async function POST(request: Request) {
       });
       if (item.flavorDisplay) {
         const flavorText = item.flavorDisplay.split(/\s*\+\s*/).join('＋');
-        itemRows.push({ type: 'text', text: flavorText, size: 'sm', color: '#444444', wrap: true, margin: 'xs' });
+        itemRows.push({ type: 'text', text: flavorText, size: 'sm', color: '#444444', wrap: true, margin: 'xs', offsetStart: '16px' });
       }
     });
     if (!itemRows.length && safeOrderText) {
