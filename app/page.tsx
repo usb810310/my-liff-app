@@ -487,7 +487,7 @@ export default function Home() {
             {!shopStatus.isOpen && <div className={styles.closedNotice}><b>{shopStatus.label}</b><span>{shopStatus.detail}</span></div>}
 
             <div className={styles.quickGrid}>
-              <a href="/menu/" className={`${styles.quickCard} ${styles.greenCard}`}><span className={styles.quickIcon}>✦</span><span><b>今日口味</b><small>{shopStatus.isOpen ? '立即點餐' : '瀏覽口味・暫停點餐'}</small></span><strong>↗</strong></a>
+              <a href="/menu/" className={`${styles.quickCard} ${styles.greenCard}`}><span className={styles.quickIcon}>✦</span><span><b>今日口味</b><small>{shopStatus.isOpen ? '立即點餐' : shopStatus.canOrder ? '預約點餐' : '瀏覽口味・暫停點餐'}</small></span><strong>↗</strong></a>
               <button onClick={() => switchTab('orders')} className={`${styles.quickCard} ${styles.creamCard}`}><span className={styles.quickIcon}>▤</span><span><b>我的訂單</b><small>查看取餐進度</small></span><strong>›</strong></button>
             </div>
 

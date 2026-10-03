@@ -1140,6 +1140,10 @@
             box-shadow: 0 2px 12px rgba(176, 152, 136, 0.15);
         }
 
+        .pickup-date-tab.disabled { opacity: .45; cursor: not-allowed; background: #f1ece8; }
+        .pickup-date-tab.disabled:hover { background: #f1ece8; border-color: var(--border-light); }
+        .pickup-slot-empty { grid-column: 1 / -1; text-align: center; padding: 18px 0; color: #8a5a4f; font-size: 14px; }
+
         .pickup-slot-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -1516,7 +1520,7 @@
 
         <!-- ===== 🆕 重新設計的訂單面板 ===== -->
         <div class="shop-status-bar" id="shopStatusBar"><span class="dot"></span><div><span id="shopStatusLabel">確認營業狀態中…</span><small id="shopStatusDetail"></small></div></div>
-        <div class="order-lock-note" id="orderLockNote">目前非營業時間，下單區已暫時鎖定；仍可瀏覽今日口味。</div>
+        <div class="order-lock-note" id="orderLockNote">今天與明天都不營業，下單區已暫時鎖定；仍可瀏覽今日口味。</div>
         <div class="brand-sub-title" id="orderSectionTitle">✨開始訂購 &amp; 模擬試用✨</div>
         <div class="order-panel" id="orderPanel">
             <!-- 第一行：標題 -->
@@ -2028,27 +2032,13 @@
 
         // ---- 取餐時間 ----
         function buildSlotGrid() {
-            const slots = [];
-            for (let h = 13; h <= 20; h++) {
-                slots.push(`${h}:00`);
-                if (h < 20) slots.push(`${h}:30`);
-            }
-
-            const nowHour = getCurrentHour();
-            const nowMin = getCurrentMinute();
-            const isToday = selectedDate === 'today';
-
+            const slots = getDaySlots(selectedDate);
             let html = '';
-            slots.forEach(slot => {
-                const [h, m] = slot.split(':').map(Number);
-                let disabled = false;
-                if (isToday) {
-                    if (h < nowHour) disabled = true;
-                    else if (h === nowHour && m <= nowMin) disabled = true;
-                }
+            slots.forEach(({ slot, disabled }) => {
                 const selected = (selectedSlot === slot);
                 html += `<div class="pickup-slot ${selected?'selected':''} ${disabled?'disabled':''}" data-slot="${slot}">${slot}</div>`;
             });
+            if (!slots.length) html = '<div class="pickup-slot-empty">這天店休，請改選其他日期</div>';
             pickupSlotGrid.innerHTML = html;
 
             pickupSlotGrid.querySelectorAll('.pickup-slot:not(.disabled)').forEach(el => {
@@ -2107,31 +2097,13 @@
         }
 
         function openPickupModal() {
-            setPickupDate('today');
-            const nowHour = getCurrentHour();
-            const nowMin = getCurrentMinute();
-            let defaultSlot = null;
-            for (let h = 13; h <= 20; h++) {
-                for (let m of [0, 30]) {
-                    if (h === 20 && m === 30) break;
-                    if (h > nowHour || (h === nowHour && m > nowMin) || (h === nowHour && m === nowMin)) {
-                        defaultSlot = `${h}:${String(m).padStart(2,'0')}`;
-                        break;
-                    }
-                }
-                if (defaultSlot) break;
-            }
-            if (!defaultSlot) {
-                setPickupDate('tomorrow');
-                defaultSlot = '13:00';
-            }
+            updatePickupTabs();
+            const firstDay = ['today', 'tomorrow'].find(isPickupDayAvailable);
+            if (!firstDay) { showToast('今天與明天都不營業，暫停線上點餐', '🔒'); return; }
+            setPickupDate(firstDay);
             setTimeout(() => {
-                const slotEl = pickupSlotGrid.querySelector(`.pickup-slot[data-slot="${defaultSlot}"]:not(.disabled)`);
-                if (slotEl) slotEl.click();
-                else {
-                    const first = pickupSlotGrid.querySelector('.pickup-slot:not(.disabled)');
-                    if (first) first.click();
-                }
+                const first = pickupSlotGrid.querySelector('.pickup-slot:not(.disabled)');
+                if (first) first.click();
             }, 50);
 
             pickupModal.classList.add('open');
@@ -2146,6 +2118,7 @@
 
         pickupDateTabs.forEach(tab => {
             tab.addEventListener('click', () => {
+                if (tab.classList.contains('disabled')) return;
                 setPickupDate(tab.dataset.date);
             });
         });
@@ -2188,7 +2161,7 @@
         payModal.querySelectorAll('[data-pay]').forEach(button => {
             button.addEventListener('click', async () => {
                 if (isSubmittingOrder || hasRecentOrderSubmitLock() || !pendingPickup) return;
-                if (!shopIsOpen) { showToast('目前非營業時間，暫停線上點餐', '🔒'); return; }
+                if (!shopIsOpen) { showToast('今天與明天都不營業，暫停線上點餐', '🔒'); return; }
                 createOrderSubmitLock();
                 setOrderSubmitting(true);
                 closePayModal();
@@ -2657,7 +2630,7 @@
             if (!shopIsOpen) {
                 clearOrderSubmitLock();
                 setOrderSubmitting(false);
-                showToast('目前非營業時間，暫停線上點餐', '🔒');
+                showToast('今天與明天都不營業，暫停線上點餐', '🔒');
                 return;
             }
     const body = generateOrderText(pickupAbs, pickupRel);
@@ -2800,7 +2773,7 @@
         clearAllBtn.addEventListener('click', clearAll);
 
         sendLineBtn.addEventListener('click', () => {
-            if (!shopIsOpen) { showToast('目前非營業時間，暫停線上點餐', '🔒'); return; }
+            if (!shopIsOpen) { showToast('今天與明天都不營業，暫停線上點餐', '🔒'); return; }
             const hasItems = duetPairs.length > 0 || Object.keys(cupMap).length > 0 || shareBoxes.length > 0;
             if (!hasItems) { showToast('請先選取口味', '⚠️'); return; }
             openPickupModal();
@@ -2924,33 +2897,77 @@
         });
 
 
-        // ---- 營業時間（POS 設定於 Firebase businessHours）：非營業時間鎖住下單區 ----
+        // ---- 營業時間（POS 設定於 Firebase businessHours）----
+        // 營業時間外仍可預約；只有今天與明天都無法取餐（店休或已過營業時間）時才鎖住下單區
         const SHOP_DEFAULT = { open: true, start: '13:00', end: '20:00' };
+        const SHOP_DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
         let shopHours = null;
         let shopIsOpen = true;
 
-        function getShopStatus() {
-            if (!shopHours) return { isOpen: true, label: '今日營業中', detail: '' };
-            const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Taipei', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date());
+        function shopToMin(t) { const [h, m] = String(t).split(':').map(Number); return h * 60 + m; }
+
+        function getTaipeiClock(offsetDays = 0) {
+            const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Taipei', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(Date.now() + offsetDays * 86400000));
             const pick = (t) => parts.find(p => p.type === t).value;
-            const day = Object.assign({}, SHOP_DEFAULT, shopHours[pick('weekday').toLowerCase().slice(0, 3)] || {});
-            const mins = Number(pick('hour')) * 60 + Number(pick('minute'));
-            const toMin = (t) => { const [h, m] = String(t).split(':').map(Number); return h * 60 + m; };
-            if (!day.open) return { isOpen: false, label: '今日店休', detail: '今天店休，線上點餐暫停，歡迎先瀏覽口味' };
-            if (mins < toMin(day.start)) return { isOpen: false, label: '尚未營業', detail: `今天 ${day.start} 開始營業` };
-            if (mins >= toMin(day.end)) return { isOpen: false, label: '今日已打烊', detail: `今天營業至 ${day.end}` };
-            return { isOpen: true, label: '今日營業中', detail: `營業時間 ${day.start} – ${day.end}` };
+            return { key: pick('weekday').toLowerCase().slice(0, 3), mins: Number(pick('hour')) * 60 + Number(pick('minute')) };
+        }
+
+        function getDayHours(dateType) {
+            const key = getTaipeiClock(dateType === 'tomorrow' ? 1 : 0).key;
+            return Object.assign({}, SHOP_DEFAULT, (shopHours && shopHours[key]) || {});
+        }
+
+        // 回傳該天可選時段（含已過時間，標記 disabled）；店休回傳空陣列
+        function getDaySlots(dateType) {
+            if (shopHours && shopHours.shopClosed) return [];
+            const day = getDayHours(dateType);
+            if (!day.open) return [];
+            const nowMins = getTaipeiClock().mins;
+            const slots = [];
+            for (let m = shopToMin(day.start); m <= shopToMin(day.end); m += 30) {
+                const slot = `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
+                slots.push({ slot, disabled: dateType === 'today' && m <= nowMins });
+            }
+            return slots;
+        }
+
+        function isPickupDayAvailable(dateType) {
+            return getDaySlots(dateType).some(s => !s.disabled);
+        }
+
+        function updatePickupTabs() {
+            pickupDateTabs.forEach(tab => {
+                const type = tab.dataset.date;
+                const ok = isPickupDayAvailable(type);
+                const base = type === 'today' ? '📅 今天' : '📆 明天';
+                tab.classList.toggle('disabled', !ok);
+                tab.textContent = ok ? base : `${base}・店休`;
+            });
+        }
+
+        function getShopStatus() {
+            if (!shopHours) return { isOpen: true, canOrder: true, label: '今日營業中', detail: '' };
+            if (shopHours.shopClosed) return { isOpen: false, canOrder: false, label: '店休中', detail: '目前店休中，線上點餐暫停，歡迎先瀏覽口味' };
+            const day = getDayHours('today');
+            const mins = getTaipeiClock().mins;
+            const isOpen = day.open && mins >= shopToMin(day.start) && mins < shopToMin(day.end);
+            const canOrder = isPickupDayAvailable('today') || isPickupDayAvailable('tomorrow');
+            if (isOpen) return { isOpen, canOrder, label: '今日營業中', detail: `營業時間 ${day.start} – ${day.end}` };
+            const label = !day.open ? '今日店休' : mins < shopToMin(day.start) ? '尚未營業' : '今日已打烊';
+            if (!canOrder) return { isOpen, canOrder, label, detail: '今天與明天都不營業，暫停線上點餐' };
+            return { isOpen, canOrder, label, detail: `目前未營業，仍可預約${isPickupDayAvailable('today') ? '今天' : '明天'}取餐` };
         }
 
         function applyShopStatus() {
             const st = getShopStatus();
-            shopIsOpen = st.isOpen;
+            shopIsOpen = st.canOrder;
             document.getElementById('shopStatusBar').classList.toggle('closed', !st.isOpen);
             document.getElementById('shopStatusLabel').textContent = st.label;
             document.getElementById('shopStatusDetail').textContent = st.detail;
-            document.getElementById('orderLockNote').classList.toggle('show', !st.isOpen);
-            ['orderPanel', 'summarySection'].forEach(id => document.getElementById(id).classList.toggle('order-locked', !st.isOpen));
-            if (!st.isOpen) { closePickupModal(); closePayModal(); }
+            document.getElementById('orderLockNote').classList.toggle('show', !st.canOrder);
+            ['orderPanel', 'summarySection'].forEach(id => document.getElementById(id).classList.toggle('order-locked', !st.canOrder));
+            updatePickupTabs();
+            if (!st.canOrder) { closePickupModal(); closePayModal(); }
         }
 
         onValue(ref(db, 'businessHours'), (snap) => { shopHours = snap.val(); applyShopStatus(); },
