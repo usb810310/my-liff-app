@@ -2918,9 +2918,18 @@
         }
 
         // 回傳該天可選時段（含已過時間，標記 disabled）；店休回傳空陣列
+        function getShopMode() {
+            if (!shopHours) return 'auto';
+            return shopHours.shopMode || (shopHours.shopClosed ? 'off' : 'auto');
+        }
+
         function getDaySlots(dateType) {
-            if (shopHours && shopHours.shopClosed) return [];
+            const mode = getShopMode();
+            if (mode === 'off') return [];
+            if (mode === 'closed' && dateType === 'today') return [];
             const day = getDayHours(dateType);
+            // 手動「營業中」時，今天即使每週設為店休也開放預約
+            if (mode === 'open' && dateType === 'today') day.open = true;
             if (!day.open) return [];
             const nowMins = getTaipeiClock().mins;
             const slots = [];
@@ -2947,12 +2956,14 @@
 
         function getShopStatus() {
             if (!shopHours) return { isOpen: true, canOrder: true, label: '今日營業中', detail: '' };
-            if (shopHours.shopClosed) return { isOpen: false, canOrder: false, label: '店休中', detail: '目前店休中，線上點餐暫停，歡迎先瀏覽口味' };
+            const mode = getShopMode();
+            const canOrder = isPickupDayAvailable('today') || isPickupDayAvailable('tomorrow');
+            if (mode === 'off') return { isOpen: false, canOrder: false, label: '店休中', detail: '目前店休中，線上點餐暫停，歡迎先瀏覽口味' };
+            if (mode === 'closed') return { isOpen: false, canOrder, label: '已打烊', detail: canOrder ? '今天已打烊，仍可預約明天取餐' : '今天已打烊，明天不營業，暫停線上點餐' };
             const day = getDayHours('today');
             const mins = getTaipeiClock().mins;
-            const isOpen = day.open && mins >= shopToMin(day.start) && mins < shopToMin(day.end);
-            const canOrder = isPickupDayAvailable('today') || isPickupDayAvailable('tomorrow');
-            if (isOpen) return { isOpen, canOrder, label: '今日營業中', detail: `營業時間 ${day.start} – ${day.end}` };
+            const isOpen = mode === 'open' || (day.open && mins >= shopToMin(day.start) && mins < shopToMin(day.end));
+            if (isOpen) return { isOpen, canOrder, label: '今日營業中', detail: mode === 'open' ? '' : `營業時間 ${day.start} – ${day.end}` };
             const label = !day.open ? '今日店休' : mins < shopToMin(day.start) ? '尚未營業' : '今日已打烊';
             if (!canOrder) return { isOpen, canOrder, label, detail: '今天與明天都不營業，暫停線上點餐' };
             return { isOpen, canOrder, label, detail: `目前未營業，仍可預約${isPickupDayAvailable('today') ? '今天' : '明天'}取餐` };

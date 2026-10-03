@@ -1,5 +1,5 @@
 export type DayHours = { open?: boolean; start?: string; end?: string };
-export type BusinessHours = Partial<Record<'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun', DayHours>> & { shopClosed?: boolean };
+export type BusinessHours = Partial<Record<'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun', DayHours>> & { shopMode?: 'auto' | 'open' | 'closed' | 'off'; shopClosed?: boolean };
 
 export type ShopStatus = {
   isOpen: boolean;
@@ -32,22 +32,30 @@ function dayHours(hours: BusinessHours, key: (typeof DAY_KEYS)[number]) {
 }
 
 // 尚未設定營業時間（null）時視為營業，避免設定資料遺失就鎖住下單
+// shopMode：auto 依每週時間；open 強制營業中；closed 手動打烊（今天不接單、仍可預約明天）；off 店休中（全部暫停）
 export function getShopStatus(hours: BusinessHours | null, now = new Date()): ShopStatus {
   if (!hours) return { isOpen: true, canOrder: true, label: '今日營業中', detail: '' };
-  if (hours.shopClosed) {
+  const mode = hours.shopMode || (hours.shopClosed ? 'off' : 'auto');
+  if (mode === 'off') {
     return { isOpen: false, canOrder: false, label: '店休中', detail: '目前店休中，線上點餐暫停，歡迎先瀏覽口味。' };
   }
   const { dayKey, minutes } = taipeiParts(now);
   const today = dayHours(hours, dayKey);
   const tomorrow = dayHours(hours, taipeiParts(new Date(now.getTime() + 86400000)).dayKey);
+  const tomorrowOk = tomorrow.open;
 
-  const isOpen = today.open && minutes >= toMinutes(today.start) && minutes < toMinutes(today.end);
-  const todayCanOrder = today.open && minutes < toMinutes(today.end);
-  const canOrder = todayCanOrder || tomorrow.open;
-  if (isOpen) return { isOpen, canOrder, label: '今日營業中', detail: `營業時間 ${today.start} – ${today.end}` };
+  if (mode === 'closed') {
+    if (!tomorrowOk) return { isOpen: false, canOrder: false, label: '已打烊', detail: '今天已打烊，明天不營業，線上點餐暫停。' };
+    return { isOpen: false, canOrder: true, label: '已打烊', detail: '今天已打烊，仍可預約明天取餐。' };
+  }
+
+  const forcedOpen = mode === 'open';
+  const isOpen = forcedOpen || (today.open && minutes >= toMinutes(today.start) && minutes < toMinutes(today.end));
+  const todayCanOrder = forcedOpen || (today.open && minutes < toMinutes(today.end));
+  const canOrder = todayCanOrder || tomorrowOk;
+  if (isOpen) return { isOpen, canOrder, label: '今日營業中', detail: forcedOpen ? '' : `營業時間 ${today.start} – ${today.end}` };
 
   const label = !today.open ? '今日店休' : minutes < toMinutes(today.start) ? '尚未營業' : '今日已打烊';
   if (!canOrder) return { isOpen, canOrder, label, detail: '今天與明天都不營業，線上點餐暫停，歡迎先瀏覽口味。' };
-  const when = todayCanOrder ? '今天' : '明天';
-  return { isOpen, canOrder, label, detail: `目前未營業，仍可預約${when}取餐。` };
+  return { isOpen, canOrder, label, detail: `目前未營業，仍可預約${todayCanOrder ? '今天' : '明天'}取餐。` };
 }
