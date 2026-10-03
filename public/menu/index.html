@@ -2642,7 +2642,7 @@
         }
 
         async function getNextPickupNo() {
-            const dateKey = new Date().toISOString().slice(0, 10).replaceAll('-', '');
+            const dateKey = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei' }).format(new Date()).replaceAll('-', '');
             const counterRef = ref(db, `dailyPickupCounters/${dateKey}`);
             try {
                 const result = await runTransaction(counterRef, (current) => Number(current || 0) + 1);
