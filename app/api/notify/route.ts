@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     }
 
     const totalValue = total != null ? Number(total) : 0;
-    const titleText = pickupLabel ? `您已送出訂單 ${pickupLabel} 取餐` : '您已送出訂單';
+    const titleText = pickupLabel ? `下單成功~取餐時間: ${pickupLabel} ` : '您已送出訂單';
 
     const customerCard = {
       type: 'flex',
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
           contents: [
             { type: 'text', text: titleText, size: 'lg', weight: 'bold', color: '#111111', wrap: true },
             { type: 'text', text: `線上訂單編號：${orderNo || '—'}`, size: 'xs', color: '#555555', wrap: true, margin: 'sm' },
-            { type: 'text', text: `取餐號碼：${customerPickupNumber}`, size: 'xxl', weight: 'bold', style: 'italic', color: '#2F5BEA', margin: 'md' },
+            { type: 'text', text: `取餐號碼：${customerPickupNumber}`, size: 'xl', weight: 'bold', style: 'italic', color: '#2F5BEA', margin: 'md' },
             { type: 'separator', margin: 'lg', color: '#111111' },
             ...itemRows,
             { type: 'separator', margin: 'lg', color: '#111111' },
