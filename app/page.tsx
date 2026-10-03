@@ -5,6 +5,7 @@ import Image from 'next/image';
 import liff from '@line/liff';
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getDatabase, get, limitToLast, onValue, push, query, ref, set } from 'firebase/database';
+import { getShopStatus, type BusinessHours } from '@/lib/business-hours';
 import styles from './page.module.css';
 
 // ====== 每日動態主題與按鈕設定 ======
@@ -220,6 +221,8 @@ export default function Home() {
   const [initAttempt, setInitAttempt] = useState(0);
   const [selectedOrderNo, setSelectedOrderNo] = useState<string | null>(null); // 目前檢視的單張訂單
   const autoPayStarted = useRef(false);
+  const [businessHours, setBusinessHours] = useState<BusinessHours | null>(null);
+  const [clock, setClock] = useState(() => Date.now());
 
   const [todayContent, setTodayContent] = useState(dailyData[0]);
 
@@ -273,6 +276,21 @@ export default function Home() {
       console.error('訂單即時同步失敗:', error);
     });
   }, [profile?.userId]);
+
+  useEffect(() => {
+    return onValue(ref(getGelatoDatabase(), 'businessHours'), (snapshot) => {
+      setBusinessHours((snapshot.val() as BusinessHours | null) ?? null);
+    }, (error) => {
+      console.error('營業時間同步失敗:', error);
+    });
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 30000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const shopStatus = getShopStatus(businessHours, new Date(clock));
 
   const loadOrders = async () => {
     if (!profile?.userId) return;
@@ -430,7 +448,7 @@ export default function Home() {
             <p className={styles.brandName}><span>On</span> My <b>Gelato</b></p>
           </div>
         </div>
-        <span className={styles.livePill}><i /> 今日營業中</span>
+        <span className={`${styles.livePill} ${shopStatus.isOpen ? '' : styles.livePillClosed}`}><i /> {shopStatus.label}</span>
       </header>
 
       <section className={styles.content} key={activeTab}>
@@ -466,8 +484,10 @@ export default function Home() {
               <span className={styles.sparkle}>✦</span>
             </section>
 
+            {!shopStatus.isOpen && <div className={styles.closedNotice}><b>{shopStatus.label}</b><span>{shopStatus.detail}</span></div>}
+
             <div className={styles.quickGrid}>
-              <a href="/menu/" className={`${styles.quickCard} ${styles.greenCard}`}><span className={styles.quickIcon}>✦</span><span><b>今日口味</b><small>立即點餐</small></span><strong>↗</strong></a>
+              <a href="/menu/" className={`${styles.quickCard} ${styles.greenCard}`}><span className={styles.quickIcon}>✦</span><span><b>今日口味</b><small>{shopStatus.isOpen ? '立即點餐' : '瀏覽口味・暫停點餐'}</small></span><strong>↗</strong></a>
               <button onClick={() => switchTab('orders')} className={`${styles.quickCard} ${styles.creamCard}`}><span className={styles.quickIcon}>▤</span><span><b>我的訂單</b><small>查看取餐進度</small></span><strong>›</strong></button>
             </div>
 
@@ -519,7 +539,7 @@ export default function Home() {
                   <span className={styles.emptyEmoji}>○</span>
                   <h3>還沒有訂單</h3>
                   <p>今天就選一個喜歡的口味吧！</p>
-                  <a href="/menu/" className={styles.secondaryButton}>前往今日口味</a>
+                  <a href="/menu/" className={styles.secondaryButton}>{shopStatus.isOpen ? '前往今日口味' : '瀏覽今日口味'}</a>
                 </div>
               ) : (
                 <div className={styles.orderList}>

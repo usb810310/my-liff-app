@@ -19,6 +19,10 @@
 .brandName { margin: 2px 0 0; font-size: 18px; line-height: 1; letter-spacing: -.04em; font-weight: 700; }
 .brandName span { color: #537a55; }.brandName b { color: var(--red); }
 .livePill { color: #557153; font-size: 10px; font-weight: 700; background: #e7efe4; border-radius: 40px; padding: 8px 11px; white-space: nowrap; }
+.livePillClosed { color: #8a5a4f; background: #f6e4e0; }
+.livePillClosed i { background: #c9695b !important; }
+.closedNotice { display: flex; flex-direction: column; gap: 3px; margin-bottom: 12px; padding: 12px 14px; border-radius: 16px; background: #fbeeea; border: 1px solid #f0d3cc; color: #8a5a4f; font-size: 12px; line-height: 1.5; }
+.closedNotice b { font-size: 13px; }
 .livePill i { width: 6px; height: 6px; display: inline-block; border-radius: 50%; background: #6da267; margin-right: 5px; }
 .content { width: min(100%, 520px); margin: 0 auto; height: calc(100dvh - 145px); padding: 10px 20px 34px; overflow-y: auto; scrollbar-width: none; animation: rise .35s cubic-bezier(.23,1,.32,1); }
 .content::-webkit-scrollbar { display: none; }
