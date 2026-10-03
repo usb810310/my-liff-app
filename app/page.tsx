@@ -147,7 +147,7 @@ function OrderDetailCard({
 }) {
   const paymentStatus = getPaymentStatus(order);
   const isOnsitePayment = order.payment === '現場付款';
-  const canPay = !order.voided && !isOnsitePayment && ['尚未付款', '付款失敗'].includes(paymentStatus);
+  const canPay = !order.voided && !isOnsitePayment && ['尚未付款', '付款失敗', '付款處理中'].includes(paymentStatus);
   const cancelled = order.voided || order.rejected;
 
   return (
@@ -185,7 +185,7 @@ function OrderDetailCard({
             onClick={() => onPay(order)}
             disabled={payingOrderNo === order.orderNo}
           >
-            {payingOrderNo === order.orderNo ? '前往付款中…' : paymentStatus === '付款失敗' ? '重新付款' : '使用 LINE Pay'}
+            {payingOrderNo === order.orderNo ? '前往付款中…' : ['付款失敗', '付款處理中'].includes(paymentStatus) ? '重新付款' : '使用 LINE Pay'}
           </button>
         )}
       </div>
@@ -392,7 +392,7 @@ export default function Home() {
       setActiveTab('orders');
       setSelectedOrderNo(getOrderKey(targetOrder)); // 直接跳到該張訂單
     });
-    if (action === 'pay' && !autoPayStarted.current && ['尚未付款', '付款失敗'].includes(getPaymentStatus(targetOrder))) {
+    if (action === 'pay' && !autoPayStarted.current && ['尚未付款', '付款失敗', '付款處理中'].includes(getPaymentStatus(targetOrder))) {
       autoPayStarted.current = true;
       void startLinePay(targetOrder);
     }
