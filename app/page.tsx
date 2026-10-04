@@ -147,7 +147,7 @@ function OrderDetailCard({
 }) {
   const paymentStatus = getPaymentStatus(order);
   const isOnsitePayment = order.payment === '現場付款';
-  const canPay = !order.voided && !isOnsitePayment && ['尚未付款', '付款失敗', '付款處理中'].includes(paymentStatus);
+  const canPay = LINE_PAY_ENABLED && !order.voided && !isOnsitePayment && ['尚未付款', '付款失敗', '付款處理中'].includes(paymentStatus);
   const cancelled = order.voided || order.rejected;
 
   return (
@@ -192,6 +192,9 @@ function OrderDetailCard({
     </article>
   );
 }
+
+// 線上 LINE Pay 待單一窗口申請完成後再開啟
+const LINE_PAY_ENABLED = false;
 
 const firebaseConfig = {
   apiKey: 'AIzaSyDvzZKr2x3TGeOFZGisKKXjbYH00DLVhKg',
@@ -357,7 +360,7 @@ export default function Home() {
   };
 
   const startLinePay = async (order: Order) => {
-    if (!order.orderNo || !profile?.userId || payingOrderNo) return;
+    if (!LINE_PAY_ENABLED || !order.orderNo || !profile?.userId || payingOrderNo) return;
     setPayingOrderNo(order.orderNo);
     try {
       const response = await fetch('/api/linepay/request', {
@@ -392,7 +395,7 @@ export default function Home() {
       setActiveTab('orders');
       setSelectedOrderNo(getOrderKey(targetOrder)); // 直接跳到該張訂單
     });
-    if (action === 'pay' && !autoPayStarted.current && ['尚未付款', '付款失敗', '付款處理中'].includes(getPaymentStatus(targetOrder))) {
+    if (LINE_PAY_ENABLED && action === 'pay' && !autoPayStarted.current && ['尚未付款', '付款失敗', '付款處理中'].includes(getPaymentStatus(targetOrder))) {
       autoPayStarted.current = true;
       void startLinePay(targetOrder);
     }

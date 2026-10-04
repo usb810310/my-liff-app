@@ -4,6 +4,9 @@ import { callLinePay, findOrderByNo, getLiffReturnUrl, getPublicSiteUrl, updateO
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
+  if (process.env.LINEPAY_ONLINE_ENABLED !== 'true') {
+    return NextResponse.json({ success: false, error: '線上 LINE Pay 暫停使用，請現場付款' }, { status: 503 });
+  }
   try {
     const body = await request.json();
     const { orderNo, userId } = body as { orderNo?: string | number; userId?: string };

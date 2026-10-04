@@ -89,7 +89,8 @@ export async function callLinePay<T>({
     throw new Error(`LINE Pay 回應格式錯誤（HTTP ${response.status}）`);
   }
   if (!response.ok || data.returnCode !== '0000') {
-    throw new Error(data.returnMessage || data.statusMessage || `LINE Pay API 錯誤（${data.returnCode || response.status}）`);
+    const message = data.returnMessage || data.statusMessage || 'LINE Pay API 錯誤';
+    throw new Error(`${message}（${data.returnCode || `HTTP ${response.status}`}）`);
   }
   return data;
 }

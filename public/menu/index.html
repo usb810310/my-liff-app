@@ -1653,14 +1653,14 @@
             </div>
             <div class="modal-sub" id="paySummary">請選擇付款方式</div>
             <div class="pay-options">
-                <button type="button" class="pay-option" data-pay="onsite">
-                    <span class="pay-option-icon">🏪</span>
-                    <span class="pay-option-text"><b>現場付款</b><small>到店取餐時再付款</small></span>
+                <button type="button" class="pay-option" data-pay="onsite_cash">
+                    <span class="pay-option-icon">💵</span>
+                    <span class="pay-option-text"><b>現場付現金</b><small>到店取餐時以現金付款</small></span>
                     <span class="pay-option-arrow">›</span>
                 </button>
-                <button type="button" class="pay-option pay-option-linepay" data-pay="linepay">
+                <button type="button" class="pay-option pay-option-linepay" data-pay="onsite_linepay">
                     <span class="pay-option-icon">💚</span>
-                    <span class="pay-option-text"><b>LINE Pay</b><small>線上付款，取餐更快速</small></span>
+                    <span class="pay-option-text"><b>現場 LINE Pay</b><small>到店取餐時以 LINE Pay 掃碼付款</small></span>
                     <span class="pay-option-arrow">›</span>
                 </button>
             </div>
@@ -2129,10 +2129,6 @@
         let pendingPickup = null;
 
         function openPayModal() {
-            const linePayBtn = payModal.querySelector('[data-pay="linepay"]');
-            const canLinePay = Boolean(window.liffUserId);
-            linePayBtn.disabled = !canLinePay;
-            linePayBtn.querySelector('small').textContent = canLinePay ? '線上付款，取餐更快速' : '請從 LINE 開啟才能使用 LINE Pay';
             paySummary.textContent = `取餐時間：${pendingPickup.rel}`;
             payError.textContent = '';
             payModal.classList.add('open');
@@ -2626,7 +2622,7 @@
             }
         }
 
-        async function sendOrderToLine(pickupAbs, pickupRel, payMethod = 'onsite') {
+        async function sendOrderToLine(pickupAbs, pickupRel, payMethod = 'onsite_cash') {
             if (!shopIsOpen) {
                 clearOrderSubmitLock();
                 setOrderSubmitting(false);
@@ -2672,9 +2668,10 @@
                     date: new Date().toISOString().split('T')[0],
                     items: itemsForFirebase,
                     total,
-                    payment: payMethod === 'linepay' ? 'LINE Pay' : '現場付款',
-                    paymentStatus: payMethod === 'linepay' ? 'pending' : 'unpaid',
-                    paymentMethod: payMethod === 'linepay' ? 'LINE_PAY' : 'ONSITE',
+                    payment: '現場付款',
+                    paymentStatus: 'unpaid',
+                    paymentMethod: payMethod === 'onsite_linepay' ? 'ONSITE_LINEPAY' : 'ONSITE_CASH',
+                    paymentNote: payMethod === 'onsite_linepay' ? '現場 LINE Pay' : '現場付現金',
                     remark: `取餐時間：${pickupRel}（${pickupAbs}）`,
                     source: window.liffUserId ? 'LIFF' : 'WEB_GUEST',
                     voided: false,
@@ -2723,33 +2720,12 @@
 
                 clearAll(false);
 
-                if (payMethod === 'linepay') {
-                    showToast('訂單已送出，正在前往 LINE Pay…', '💚');
-                    try {
-                        const payResponse = await fetch('/api/linepay/request', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ orderNo, userId: memberProfile.lineUserId || window.liffUserId }),
-                        });
-                        const payResult = await payResponse.json().catch(() => ({}));
-                        const payUrl = window.liff && window.liff.isInClient()
-                            ? payResult.appPaymentUrl || payResult.webPaymentUrl || payResult.paymentUrl
-                            : payResult.webPaymentUrl || payResult.appPaymentUrl || payResult.paymentUrl;
-                        if (!payResponse.ok || !payUrl) throw new Error(payResult.error || 'LINE Pay 尚未開通');
-                        window.location.href = payUrl;
-                        return;
-                    } catch (payError) {
-                        console.error('LINE Pay 請求失敗:', payError);
-                        showToast('LINE Pay 暫時無法使用，可到「我的訂單」重新付款', '⚠️');
-                    }
-                } else {
-                    showToast(
-                        notificationWarning
-                            ? `訂單已送出；LINE 通知失敗：${notificationWarning}`
-                            : '訂單已送出，請到 LINE 查看訂單小卡',
-                        notificationWarning ? '⚠️' : '✅',
-                    );
-                }
+                showToast(
+                    notificationWarning
+                        ? `訂單已送出；LINE 通知失敗：${notificationWarning}`
+                        : '訂單已送出，請到 LINE 查看訂單小卡',
+                    notificationWarning ? '⚠️' : '✅',
+                );
 
                 // 回到 LINE 聊天室查看訂單小卡；非 LINE 內開啟則回首頁
                 window.setTimeout(() => {
