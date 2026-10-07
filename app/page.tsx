@@ -324,6 +324,7 @@ export default function Home() {
         userId: profile.userId,
         displayName: profile.displayName,
         wishText: wishText.trim(),
+        flavor: wishText.trim(),
         timestamp: Date.now(),
         status: 'pending',
       });
