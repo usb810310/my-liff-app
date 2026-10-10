@@ -1623,7 +1623,7 @@
 
         <!-- ===== 控制欄：固定於頁面最上方 ===== -->
         <div class="control-bar">
-            <a href="/" class="control-item"><span class="icon">🏠</span><span class="label">首頁</span></a>
+            <a href="../" class="control-item"><span class="icon">🏠</span><span class="label">首頁</span></a>
             <span class="control-divider"></span>
             <div class="sync-badge" id="syncBadge"><span class="indicator connecting" id="indicatorDot"></span><span class="sync-label" id="syncText">連線中</span></div>
             <button class="wish-btn-inline" id="wishTriggerBtn"><span class="icon">⭐</span><span class="label">許願池</span></button>
@@ -2901,7 +2901,7 @@
                 const pickupTime = pickupRel.replace(/今天|明天/g, '').trim();
                 let notificationWarning = '';
                 try {
-                    const response = await fetch('/api/notify', {
+                    const response = await fetch('https://omg-gelato-omg-liff.vercel.app/api/notify', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
