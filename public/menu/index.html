@@ -1464,6 +1464,26 @@
             }
         }
 
+        /* ===== 精簡活潑品牌招牌 ===== */
+        .brand { padding: 8px 0 10px; }
+        .brand-inner { flex-direction: row; justify-content: center; gap: 11px; }
+        .brand-logo-wrapper { position: relative; isolation: isolate; width: 54px; height: 54px; margin: 0; flex: 0 0 54px; }
+        .brand-logo-wrapper::before, .brand-logo-wrapper::after { content: ''; position: absolute; z-index: 0; border-radius: 50%; pointer-events: none; }
+        .brand-logo-wrapper::before { width: 10px; height: 10px; top: 1px; right: -3px; background: #f5c542; animation: logoBubble 2.8s ease-in-out infinite; }
+        .brand-logo-wrapper::after { width: 6px; height: 6px; bottom: 4px; left: -2px; background: #e8837a; animation: logoBubble 2.8s ease-in-out .8s infinite reverse; }
+        .brand-logo { position: relative; z-index: 1; width: 54px; height: 54px; filter: drop-shadow(0 5px 9px rgba(44,36,30,.14)); animation: logoFloat 3.4s ease-in-out infinite; }
+        .brand-title-box { align-items: flex-start; }
+        .brand-title { font-size: 25px; letter-spacing: 1px; line-height: 1; }
+        .brand-divider { height: 2px; margin: 5px 0 0; width: 100%; }
+        .brand-tagline { display: block; margin-top: 4px; color: var(--text-secondary); font-size: 8px; letter-spacing: .16em; text-transform: uppercase; }
+        .brand-title span { position: relative; }
+        .brand-title span::after { content: '✦'; display: inline-block; margin-left: 4px; color: #f0a35b; font-size: 11px; vertical-align: top; animation: sparklePop 1.8s ease-in-out infinite; }
+        @keyframes logoFloat { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-4px) rotate(2deg); } }
+        @keyframes logoBubble { 0%, 100% { transform: translate(0, 0) scale(.8); opacity: .45; } 50% { transform: translate(3px, -5px) scale(1.15); opacity: 1; } }
+        @keyframes sparklePop { 0%, 100% { transform: scale(.75) rotate(-10deg); opacity: .55; } 50% { transform: scale(1.15) rotate(10deg); opacity: 1; } }
+        @media (max-width: 480px) { .brand { padding: 6px 0 8px; } .brand-inner { gap: 8px; } .brand-logo-wrapper, .brand-logo { width: 46px; height: 46px; flex-basis: 46px; } .brand-title { font-size: 22px; } .brand-tagline { font-size: 7px; } }
+        @media (prefers-reduced-motion: reduce) { .brand-logo, .brand-logo-wrapper::before, .brand-logo-wrapper::after, .brand-title span::after { animation: none; } }
+
         /* ===== 2026 訂餐流程重排 ===== */
         body { padding-top: 78px; }
         .control-bar { position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: min(500px, calc(100% - 24px)); margin: 0; border-radius: 0 0 20px 20px; z-index: 9999; }
@@ -1501,6 +1521,7 @@
                 <div class="brand-title-box">
                     <h1 class="brand-title" id="brandMainTitle">OMG! <span>Gelato</span></h1>
                     <div class="brand-divider"></div>
+                    <span class="brand-tagline">small batch · big smile</span>
                 </div>
             </div>
         </div>
