@@ -327,6 +327,10 @@
         .wish-btn-inline:active {
             transform: scale(0.96);
         }
+        .my-orders-btn { display: flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid var(--border-light); border-radius: 24px; background: var(--bg-card); color: var(--text-primary); font: inherit; white-space: nowrap; cursor: pointer; }
+        .my-orders-btn[hidden] { display: none; }
+        .my-orders-btn:hover { background: var(--bg-card-hover); }
+        .my-orders-btn:active { transform: scale(.96); }
         .wish-btn-inline .icon {
             font-size: 14px;
             line-height: 1;
@@ -978,6 +982,19 @@
         .modal-overlay.open .modal-box {
             transform: translateY(0) scale(1);
         }
+        .customer-orders-box { max-width: 480px; padding: 22px 18px 18px; }
+        .customer-orders-list { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; max-height: 58vh; margin-top: 12px; }
+        .customer-order-card { padding: 13px; border: 1px solid var(--border-light); border-radius: 16px; background: var(--bg-card); }
+        .customer-order-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+        .customer-order-number { color: var(--text-primary); font-size: 14px; font-weight: 800; overflow-wrap: anywhere; }
+        .customer-order-status { flex: 0 0 auto; padding: 4px 8px; border-radius: 12px; background: var(--accent-light); color: var(--text-primary); font-size: 11px; font-weight: 700; }
+        .customer-order-date, .customer-order-payment { margin-top: 5px; color: var(--text-secondary); font-size: 11px; }
+        .customer-order-items { margin: 9px 0 0; padding-left: 18px; color: var(--text-primary); font-size: 12px; line-height: 1.6; }
+        .customer-order-total { margin-top: 8px; color: var(--text-primary); font-size: 13px; font-weight: 800; text-align: right; }
+        .customer-order-notice { margin: 8px 0 0; color: #946b5f; font-size: 11px; line-height: 1.5; }
+        .customer-order-cancel { width: 100%; min-height: 38px; margin-top: 10px; border: 1px solid #e6c7c1; border-radius: 12px; background: #fff8f6; color: #a33b32; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+        .customer-order-cancel:disabled { opacity: .55; cursor: wait; }
+        .customer-orders-empty { padding: 24px 12px; color: var(--text-secondary); font-size: 13px; text-align: center; }
         .modal-header {
             display: flex;
             justify-content: space-between;
@@ -1369,7 +1386,8 @@
             .control-item,
             .sync-badge,
             .theme-toggle-btn,
-            .wish-btn-inline {
+            .wish-btn-inline,
+            .my-orders-btn {
                 padding: 4px 12px;
                 font-size: 11px;
                 flex-shrink: 0;
@@ -1630,6 +1648,7 @@
             <a href="../" class="control-item"><span class="icon">🏠</span><span class="label">首頁</span></a>
             <span class="control-divider"></span>
             <div class="sync-badge" id="syncBadge"><span class="indicator connecting" id="indicatorDot"></span><span class="sync-label" id="syncText">連線中</span></div>
+            <button class="my-orders-btn" id="myOrdersBtn" type="button" hidden>📋 我的訂單</button>
             <button class="wish-btn-inline" id="wishTriggerBtn"><span class="icon">⭐</span><span class="label">許願池</span></button>
             <span class="control-divider"></span>
             <button class="theme-toggle-btn" id="themeToggle"><span class="icon" id="toggleKnob">🌙</span><span class="label" id="themeLabel">黑主題</span></button>
@@ -1851,6 +1870,23 @@
         </div>
     </div>
 
+    <!-- ===== 顧客訂單查詢 ===== -->
+    <div class="modal-overlay" id="customerOrdersModal">
+        <div class="modal-box customer-orders-box">
+            <div class="modal-header">
+                <h3>📋 我的訂單</h3>
+                <button class="modal-close" id="customerOrdersClose" type="button" aria-label="關閉">✕</button>
+            </div>
+            <p class="modal-sub" id="customerOrdersHint">查看訂單狀態；店家接單後如需取消，請洽客服人員。</p>
+            <div class="customer-orders-list" id="customerOrdersList" aria-live="polite">
+                <p class="customer-orders-empty">載入訂單中…</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="customerOrdersCloseBtn" type="button">關閉</button>
+            </div>
+        </div>
+    </div>
+
     <script
         id="liff-sdk"
         src="https://static.line-scdn.net/liff/edge/2/sdk.js"
@@ -1874,23 +1910,25 @@
             window.addEventListener('liff-sdk-error', handleError, { once: true });
         });
 
-                if (liff) {
-            liff.init({ liffId: '2011536222-v4OvTSup' }).then(() => {
+        if (liff) {
+            try {
+                await liff.init({ liffId: '2011536222-v4OvTSup' });
                 if (liff.isLoggedIn()) {
-                    liff.getProfile().then(profile => {
-                        window.liffUserId = profile.userId;
-                        window.liffDisplayName = profile.displayName;
-                        window.liffPictureUrl = profile.pictureUrl;
-                        
-                    });
+                    const profile = await liff.getProfile();
+                    window.liffUserId = profile.userId;
+                    window.liffDisplayName = profile.displayName;
+                    window.liffPictureUrl = profile.pictureUrl;
+                    window.liffAccessToken = liff.getAccessToken();
                 }
-            }).catch(err => console.error('LIFF 初始化失敗:', err));
+            } catch (err) {
+                console.error('LIFF 初始化失敗:', err);
+            }
         } else {
             console.error('LIFF SDK 載入失敗，將略過使用者通知');
         }
 
         import { initializeApp, getApp, getApps } from 'firebase/app';
-        import { getDatabase, ref, onValue, push, set, get, runTransaction } from 'firebase/database';
+        import { getDatabase, ref, onValue, push, set, get, query, orderByChild, equalTo, limitToLast, runTransaction } from 'firebase/database';
 
         const firebaseConfig = {
             apiKey: "AIzaSyDvzZKr2x3TGeOFZGisKKXjbYH00DLVhKg",
@@ -1958,8 +1996,13 @@
         const wishCancelBtn = document.getElementById('wishCancelBtn');
         const wishModalClose = document.getElementById('wishModalClose');
         const wishTriggerBtn = document.getElementById('wishTriggerBtn');
+        const myOrdersBtn = document.getElementById('myOrdersBtn');
+        const customerOrdersModal = document.getElementById('customerOrdersModal');
+        const customerOrdersList = document.getElementById('customerOrdersList');
+        const customerOrdersHint = document.getElementById('customerOrdersHint');
 
         let toastTimer = null;
+        let cancellingCustomerOrder = '';
         let shareBoxes = [];
         let modalSelectedFlavors = [];
         let modalAvailableFlavors = [];
@@ -2070,7 +2113,158 @@
             toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
         }
 
-        function escapeHtml(s) { return s ? s.replace(/&/g, '&amp;').replace(/</g, '&lt;') : ''; }
+        function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+
+        function isCustomerOrderWaiting(order) {
+            return !order.voided && !order.rejected && ['', 'waiting', 'pending', 'waiting_accept', '等待接單', '等待店家接單'].includes(String(order.status || '').trim());
+        }
+
+        function getCustomerOrderStatus(order) {
+            if (order.cancelledBy === 'customer') return '您已取消';
+            if (order.voided || order.rejected || ['cancelled', 'rejected', '已取消', '拒單'].includes(order.status || '')) return '已取消';
+            const status = String(order.status || '').trim();
+            if (['accepted', '接單'].includes(status)) return '店家已接單';
+            if (['preparing', '製作中'].includes(status)) return '製作中';
+            if (['ready', '可取餐'].includes(status)) return '可以取餐';
+            if (['completed', '已完成'].includes(status)) return '已完成';
+            return '等待店家接單';
+        }
+
+        function createOrderText(tag, className, text) {
+            const element = document.createElement(tag);
+            if (className) element.className = className;
+            element.textContent = text;
+            return element;
+        }
+
+        function renderCustomerOrders(orders, requestedOrderNo = '') {
+            customerOrdersList.replaceChildren();
+            if (!orders.length) {
+                customerOrdersList.appendChild(createOrderText('p', 'customer-orders-empty', '目前找不到您的訂單。'));
+                return;
+            }
+
+            orders.forEach(order => {
+                const card = document.createElement('article');
+                card.className = 'customer-order-card';
+                if (requestedOrderNo && String(order.orderNo) === requestedOrderNo) card.id = 'requestedCustomerOrder';
+
+                const heading = document.createElement('div');
+                heading.className = 'customer-order-heading';
+                heading.append(
+                    createOrderText('span', 'customer-order-number', `訂單 ${order.orderNo || '—'} · 取餐 ${order.pickupNo || order.pickupNumber || order.pickupCode || '待分配'}`),
+                    createOrderText('span', 'customer-order-status', getCustomerOrderStatus(order)),
+                );
+                card.appendChild(heading);
+
+                const date = order.time ? new Date(order.time) : null;
+                const dateText = date && !Number.isNaN(date.getTime())
+                    ? new Intl.DateTimeFormat('zh-TW', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date)
+                    : '時間未提供';
+                card.appendChild(createOrderText('p', 'customer-order-date', dateText));
+
+                const items = Array.isArray(order.items) ? order.items : [];
+                const itemList = document.createElement('ul');
+                itemList.className = 'customer-order-items';
+                items.forEach(item => {
+                    const quantity = Number(item.qty) > 1 ? ` × ${item.qty}` : '';
+                    const flavor = item.flavorDisplay ? ` · ${item.flavorDisplay}` : '';
+                    itemList.appendChild(createOrderText('li', '', `${item.name || '冰淇淋品項'}${quantity}${flavor}`));
+                });
+                if (!items.length) itemList.appendChild(createOrderText('li', '', '品項明細請洽店家確認'));
+                card.appendChild(itemList);
+                card.appendChild(createOrderText('p', 'customer-order-total', `合計 $${Number(order.total || 0).toFixed(0)}`));
+
+                const status = String(order.status || '').trim();
+                if (isCustomerOrderWaiting(order)) {
+                    const paymentStatus = String(order.paymentStatus || '');
+                    const payment = String(order.payment || '');
+                    const needsSupport = ['paid', 'processing'].includes(paymentStatus) || ['已付款', 'paid', '已確認', '付款處理中', 'processing'].includes(payment);
+                    if (needsSupport) {
+                        card.appendChild(createOrderText('p', 'customer-order-notice', '此訂單付款處理中或已付款，如需取消請洽客服人員。'));
+                    } else {
+                        const cancelButton = createOrderText('button', 'customer-order-cancel', cancellingCustomerOrder === String(order.orderNo) ? '取消處理中…' : '取消此訂單');
+                        cancelButton.type = 'button';
+                        cancelButton.disabled = cancellingCustomerOrder === String(order.orderNo);
+                        cancelButton.addEventListener('click', () => cancelCustomerOrder(order));
+                        card.appendChild(cancelButton);
+                    }
+                } else if (['accepted', 'preparing', 'ready', '接單', '製作中', '可取餐'].includes(status)) {
+                    card.appendChild(createOrderText('p', 'customer-order-notice', '店家已接單；如需取消，請洽客服人員。'));
+                } else if (order.cancelledBy === 'customer') {
+                    card.appendChild(createOrderText('p', 'customer-order-notice', '此訂單已由您取消。'));
+                }
+
+                customerOrdersList.appendChild(card);
+            });
+        }
+
+        async function loadCustomerOrders(requestedOrderNo = '') {
+            if (!window.liffUserId) {
+                customerOrdersHint.textContent = '請從 LINE 開啟此頁面並登入，才能查看您的訂單。';
+                renderCustomerOrders([]);
+                return;
+            }
+            customerOrdersHint.textContent = '店家接單後如需取消，請洽客服人員。';
+            customerOrdersList.replaceChildren(createOrderText('p', 'customer-orders-empty', '載入訂單中…'));
+            try {
+                const ordersQuery = query(ref(db, 'orders'), orderByChild('userId'), equalTo(window.liffUserId), limitToLast(30));
+                const snapshot = await get(ordersQuery);
+                const orders = [];
+                snapshot.forEach(child => orders.push({ id: child.key, ...child.val() }));
+                orders.sort((a, b) => new Date(b.time || 0).getTime() - new Date(a.time || 0).getTime());
+                if (requestedOrderNo) {
+                    const requestedIndex = orders.findIndex(order => String(order.orderNo) === requestedOrderNo);
+                    if (requestedIndex > 0) orders.unshift(orders.splice(requestedIndex, 1)[0]);
+                }
+                renderCustomerOrders(orders, requestedOrderNo);
+            } catch (error) {
+                console.error('讀取顧客訂單失敗:', error);
+                customerOrdersHint.textContent = '訂單暫時無法載入，請確認網路後重試。';
+                renderCustomerOrders([]);
+            }
+        }
+
+        async function cancelCustomerOrder(order) {
+            const orderNo = String(order.orderNo || '');
+            if (!orderNo || !isCustomerOrderWaiting(order) || cancellingCustomerOrder) return;
+            if (!window.confirm('確定要取消這筆尚未接單的訂單嗎？取消後無法復原。')) return;
+            const accessToken = liff?.getAccessToken?.();
+            if (!accessToken) {
+                showToast('登入驗證已失效，請重新從 LINE 開啟', '⚠️');
+                return;
+            }
+
+            cancellingCustomerOrder = orderNo;
+            renderCustomerOrders([order]);
+            try {
+                const response = await fetch('https://omg-gelato-omg-liff.vercel.app/api/cancel-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderNo: order.orderNo, accessToken }),
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || !result.success) throw new Error(result.error || `取消失敗（HTTP ${response.status}）`);
+                showToast('訂單已取消', '✅');
+            } catch (error) {
+                console.error('取消顧客訂單失敗:', error);
+                showToast(error instanceof Error ? error.message : '取消訂單失敗，請稍後再試', '❌');
+            } finally {
+                cancellingCustomerOrder = '';
+                await loadCustomerOrders(orderNo);
+            }
+        }
+
+        function openCustomerOrders(requestedOrderNo = '') {
+            customerOrdersModal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+            void loadCustomerOrders(requestedOrderNo);
+        }
+
+        function closeCustomerOrders() {
+            customerOrdersModal.classList.remove('open');
+            document.body.style.overflow = '';
+        }
 
         function getCurrentTime() { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d
                 .getMinutes()).padStart(2, '0'); }
@@ -2572,6 +2766,15 @@
         wishModal.addEventListener('click', function(e) {
             if (e.target === wishModal) closeWishModal();
         });
+        myOrdersBtn.hidden = !window.liffUserId;
+        myOrdersBtn.addEventListener('click', () => openCustomerOrders());
+        document.getElementById('customerOrdersClose').addEventListener('click', closeCustomerOrders);
+        document.getElementById('customerOrdersCloseBtn').addEventListener('click', closeCustomerOrders);
+        customerOrdersModal.addEventListener('click', event => {
+            if (event.target === customerOrdersModal) closeCustomerOrders();
+        });
+        const requestedOrderNo = new URLSearchParams(window.location.search).get('orderNo');
+        if (requestedOrderNo && window.liffUserId) openCustomerOrders(requestedOrderNo);
         wishConfirmBtn.addEventListener('click', submitWish);
         wishInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') submitWish();

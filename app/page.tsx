@@ -52,7 +52,7 @@ function getOrderStatus(order: Order) {
 
 function isWaitingForShop(order: Order) {
   const status = String(order.status || '').trim();
-  return !order.voided && !order.rejected && ['', 'waiting', 'pending', '等待接單'].includes(status);
+  return !order.voided && !order.rejected && ['', 'waiting', 'pending', 'waiting_accept', '等待接單', '等待店家接單'].includes(status);
 }
 
 type OrderStatusKey = 'waiting' | 'accepted' | 'preparing' | 'ready' | 'completed' | 'rejected';

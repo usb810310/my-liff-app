@@ -153,7 +153,7 @@ export async function cancelWaitingOrder(orderNo: string, userId: string) {
   if (!etag) throw new Error('無法確認訂單最新狀態');
 
   const status = String(order.status || '').trim();
-  if (order.voided || order.rejected || !['', 'waiting', 'pending', '等待接單'].includes(status)) {
+  if (order.voided || order.rejected || !['', 'waiting', 'pending', 'waiting_accept', '等待接單', '等待店家接單'].includes(status)) {
     throw new OrderCancellationError('店家已接單或訂單已處理，請洽客服人員協助取消', 409);
   }
 
