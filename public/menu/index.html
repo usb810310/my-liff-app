@@ -1485,6 +1485,30 @@
         .pay-option-linepay:hover { border-color: #65ce83; box-shadow: 0 10px 24px rgba(6,199,85,.13); }
         @media (max-width: 480px) { .pay-option { min-height: 72px; padding: 11px 12px; grid-template-columns: 42px minmax(0, 1fr) 28px; gap: 11px; } .pay-option-icon { width: 42px; height: 42px; } }
 
+        /* ===== 最終介面收斂與點擊體驗 ===== */
+        .floating-toast { top: 78px; z-index: 10001; max-width: calc(100% - 32px); overflow: hidden; text-overflow: ellipsis; }
+        .shop-status-bar { display: flex; align-items: center; gap: 8px; margin: 4px 0 10px; padding: 8px 3px 9px; border: 0; border-bottom: 1px solid #e8e3da; border-radius: 0; background: transparent; color: #66745f; box-shadow: none; font-size: 12px; }
+        .shop-status-bar .dot { width: 7px; height: 7px; box-shadow: none; }
+        .shop-status-bar small { color: var(--text-secondary); font-size: 10px; }
+        .shop-status-bar.closed { background: transparent; color: #946b5f; border-bottom-color: #eee0db; }
+        .shop-status-bar.closed .dot { background: #c9695b; }
+        .today-section { border: 1px solid #e8e0d6; background: var(--bg-card); box-shadow: 0 5px 16px rgba(75,54,35,.05); }
+        .today-section::after { display: none; }
+        .today-card { border-radius: 14px; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease; }
+        .today-card::after { width: 18px; height: 18px; right: 7px; bottom: 6px; font-size: 13px; opacity: .55; }
+        .today-card:hover:not(.sold-out), .today-card.taste-focus { transform: translateY(-2px); rotate: none; box-shadow: 0 6px 13px rgba(113,83,55,.1); }
+        .today-card:hover:not(.sold-out)::after, .today-card.taste-focus::after { transform: scale(1); }
+        .today-card.taste-focus { background: #fffaf3; animation: tasteFocus .24s ease-out; }
+        @keyframes tasteFocus { from { opacity: .72; transform: translateY(2px); } to { opacity: 1; transform: translateY(-2px); } }
+        .flavor-window-heading { margin-bottom: 8px; }
+        .flavor-window-heading strong { font-size: 15px; font-weight: 700; }
+        .flavor-window-heading small { font-size: 10px; }
+        .container-option, .today-card, .pay-option, .summary-actions .action-btn { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        button, a { -webkit-tap-highlight-color: transparent; }
+        :focus-visible { outline: 3px solid rgba(223,138,81,.24); outline-offset: 2px; }
+        @media (max-width: 480px) { .floating-toast { top: 70px; font-size: 13px; padding: 10px 17px; } .shop-status-bar { margin-top: 2px; } }
+        @media (prefers-reduced-motion: reduce) { .floating-toast, .today-card.taste-focus { animation: none; transition: none; } }
+
         /* ===== 口味窗口與購物清單互動升級 ===== */
         .flavor-window-heading { display: flex; align-items: baseline; justify-content: space-between; width: 100%; margin-bottom: 10px; }
         .flavor-window-heading strong { color: var(--text-primary); font-size: 16px; letter-spacing: -.02em; }
