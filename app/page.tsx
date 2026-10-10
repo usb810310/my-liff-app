@@ -28,7 +28,7 @@ type Order = {
   pickupCode?: string | number; pickupNo?: string | number; pickupNumber?: string | number;
   total?: string | number; remark?: string; time?: string; date?: string;
   status?: string; payment?: string; paymentStatus?: string;
-  channel?: string; source?: string; rejected?: boolean; voided?: boolean;
+  channel?: string; source?: string; rejected?: boolean; voided?: boolean; cancelledBy?: string;
   items?: OrderItem[];
 };
 
@@ -50,6 +50,11 @@ function getOrderStatus(order: Order) {
   return getStatusMeta(order).label;
 }
 
+function isWaitingForShop(order: Order) {
+  const status = String(order.status || '').trim();
+  return !order.voided && !order.rejected && ['', 'waiting', 'pending', '等待接單'].includes(status);
+}
+
 type OrderStatusKey = 'waiting' | 'accepted' | 'preparing' | 'ready' | 'completed' | 'rejected';
 const statusSteps: Array<{ key: Exclude<OrderStatusKey, 'rejected'>; label: string; icon: string }> = [
   { key: 'waiting', label: '等待接單', icon: '01' },
@@ -59,14 +64,17 @@ const statusSteps: Array<{ key: Exclude<OrderStatusKey, 'rejected'>; label: stri
 ];
 
 function getStatusMeta(order: Order) {
+  if (order.cancelledBy === 'customer') {
+    return { key: 'rejected' as const, label: '訂單已取消', hint: '此訂單已由您取消。' };
+  }
   if (order.voided || order.rejected || ['cancelled', 'rejected', '已取消', '拒單'].includes(order.status || '')) {
     return { key: 'rejected' as const, label: '店家無法接單', hint: '若已付款，退款會依付款服務流程處理。' };
   }
   const status = order.status || '';
   if (['completed', '已完成'].includes(status)) return { key: 'completed' as const, label: '訂單已完成', hint: '謝謝你的光臨，期待下次見。' };
-  if (['ready', '可取餐'].includes(status)) return { key: 'ready' as const, label: '可以取餐', hint: '請依取餐編號到店取餐。' };
-  if (['preparing', '製作中'].includes(status)) return { key: 'preparing' as const, label: '製作中', hint: '店家正在為你準備冰淇淋。' };
-  if (['accepted', '接單'].includes(status)) return { key: 'accepted' as const, label: '店家已接單', hint: '訂單已進入製作流程。' };
+  if (['ready', '可取餐'].includes(status)) return { key: 'ready' as const, label: '可以取餐', hint: '請依取餐編號到店取餐；如需取消，請洽客服人員。' };
+  if (['preparing', '製作中'].includes(status)) return { key: 'preparing' as const, label: '製作中', hint: '店家正在為你準備冰淇淋；如需取消，請洽客服人員。' };
+  if (['accepted', '接單'].includes(status)) return { key: 'accepted' as const, label: '店家已接單', hint: '訂單已進入製作流程；如需取消，請洽客服人員。' };
   return { key: 'waiting' as const, label: '等待店家接單', hint: '訂單已送出，店家確認後會立即更新。' };
 }
 
@@ -140,15 +148,21 @@ function OrderDetailCard({
   order,
   payingOrderNo,
   onPay,
+  cancellingOrderNo,
+  onCancel,
 }: {
   order: Order;
   payingOrderNo: string | number | null;
   onPay: (order: Order) => void;
+  cancellingOrderNo: string | number | null;
+  onCancel: (order: Order) => void;
 }) {
   const paymentStatus = getPaymentStatus(order);
   const isOnsitePayment = order.payment === '現場付款';
   const canPay = LINE_PAY_ENABLED && !order.voided && !isOnsitePayment && ['尚未付款', '付款失敗', '付款處理中'].includes(paymentStatus);
   const cancelled = order.voided || order.rejected;
+  const waitingForShop = isWaitingForShop(order);
+  const paymentNeedsSupport = ['已付款', '付款處理中'].includes(paymentStatus);
 
   return (
     <article className={styles.orderDetailCard}>
@@ -189,6 +203,19 @@ function OrderDetailCard({
           </button>
         )}
       </div>
+      {waitingForShop && !paymentNeedsSupport && order.orderNo && (
+        <button
+          type="button"
+          className={styles.cancelOrderButton}
+          onClick={() => onCancel(order)}
+          disabled={cancellingOrderNo === order.orderNo}
+        >
+          {cancellingOrderNo === order.orderNo ? '取消處理中…' : '取消此訂單'}
+        </button>
+      )}
+      {waitingForShop && paymentNeedsSupport && (
+        <p className={styles.cancelOrderNotice}>此訂單{paymentStatus}，如需取消請洽客服人員協助。</p>
+      )}
     </article>
   );
 }
@@ -221,6 +248,7 @@ export default function Home() {
   const [isSubmittingWish, setIsSubmittingWish] = useState(false);
   const [wishSuccess, setWishSuccess] = useState(false);
   const [payingOrderNo, setPayingOrderNo] = useState<string | number | null>(null);
+  const [cancellingOrderNo, setCancellingOrderNo] = useState<string | number | null>(null);
   const [initAttempt, setInitAttempt] = useState(0);
   const [selectedOrderNo, setSelectedOrderNo] = useState<string | null>(null); // 目前檢視的單張訂單
   const autoPayStarted = useRef(false);
@@ -391,6 +419,30 @@ export default function Home() {
     }
   };
 
+  const cancelOrder = async (order: Order) => {
+    if (!order.orderNo || !isWaitingForShop(order) || cancellingOrderNo) return;
+    if (!window.confirm('確定要取消這筆尚未接單的訂單嗎？取消後無法復原。')) return;
+    setCancellingOrderNo(order.orderNo);
+    try {
+      const accessToken = liff.getAccessToken();
+      if (!accessToken) throw new Error('無法取得 LINE 登入驗證，請重新開啟此頁面');
+      const response = await fetch('/api/cancel-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderNo: order.orderNo, accessToken }),
+      });
+      const result = await response.json().catch((): { success?: boolean; error?: string } => ({}));
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || '取消訂單失敗，請稍後再試');
+      }
+    } catch (error) {
+      console.error('取消訂單失敗:', error);
+      alert(error instanceof Error ? error.message : '取消訂單失敗，請稍後再試');
+    } finally {
+      setCancellingOrderNo(null);
+    }
+  };
+
   const handleOrderReturn = useEffectEvent((targetOrder: Order, action: string | null) => {
     startTransition(() => {
       setActiveTab('orders');
@@ -518,6 +570,8 @@ export default function Home() {
                 order={selectedOrder}
                 payingOrderNo={payingOrderNo}
                 onPay={startLinePay}
+                cancellingOrderNo={cancellingOrderNo}
+                onCancel={cancelOrder}
               />
             </section>
           ) : (
