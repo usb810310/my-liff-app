@@ -1483,6 +1483,11 @@
         .pay-option-linepay::before { background: #06c755; }
         .pay-option-linepay .pay-option-arrow { background: #e2f7e8; color: #2e9d50; }
         .pay-option-linepay:hover { border-color: #65ce83; box-shadow: 0 10px 24px rgba(6,199,85,.13); }
+        .pay-option-disabled { cursor: not-allowed; }
+        .pay-option-disabled, .pay-option-disabled:hover { opacity: 0.55; transform: none; box-shadow: 0 5px 14px rgba(72, 51, 34, .06); border-color: #e8dfd5; filter: grayscale(0.35); }
+        .pay-option-disabled::before { background: #cbb8a4; }
+        .pay-option-badge { display: inline-block; align-self: center; margin-left: auto; padding: 4px 10px; border-radius: 999px; background: #f3eee8; color: #9a8877; font-size: 11px; font-weight: 700; letter-spacing: .02em; white-space: nowrap; }
+        .pay-option-disabled .pay-option-arrow { display: none; }
         @media (max-width: 480px) { .pay-option { min-height: 72px; padding: 11px 12px; grid-template-columns: 42px minmax(0, 1fr) 28px; gap: 11px; } .pay-option-icon { width: 42px; height: 42px; } }
 
         /* ===== 分享盒重複選取與送單確認 ===== */
@@ -1799,10 +1804,10 @@
                     <span class="pay-option-text"><b>現場付款</b><small>到店取餐時付款</small></span>
                     <span class="pay-option-arrow">›</span>
                 </button>
-                <button type="button" class="pay-option pay-option-linepay" data-pay="onsite_linepay">
+                <button type="button" class="pay-option pay-option-linepay pay-option-disabled" data-pay="onsite_linepay" disabled aria-disabled="true">
                     <span class="pay-option-icon pay-option-icon-line" aria-hidden="true">LINE</span>
-                    <span class="pay-option-text"><b>LINE Pay</b><small>使用 LINE Pay 完成付款</small></span>
-                    <span class="pay-option-arrow">›</span>
+                    <span class="pay-option-text"><b>LINE Pay</b><small>即將推出</small></span>
+                    <span class="pay-option-badge">即將推出</span>
                 </button>
             </div>
             <div class="modal-error" id="payError"></div>
@@ -2295,6 +2300,13 @@
         function openPayModal() {
             paySummary.textContent = `取餐時間：${pendingPickup.rel}`;
             payError.textContent = '';
+            const linepayButton = payModal.querySelector('[data-pay="onsite_linepay"]');
+            if (linepayButton) {
+                // 線上 LINE Pay 待單一窗口申請完成後再開啟
+                linepayButton.disabled = true;
+                linepayButton.setAttribute('aria-disabled', 'true');
+                linepayButton.classList.add('pay-option-disabled');
+            }
             payModal.classList.add('open');
             document.body.style.overflow = 'hidden';
         }
