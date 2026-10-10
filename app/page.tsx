@@ -146,7 +146,7 @@ function OrderDetailCard({
   onPay: (order: Order) => void;
 }) {
   const paymentStatus = getPaymentStatus(order);
-  const isOnsitePayment = order.payment === '現場付款' || order.payment === 'ONSITE_CASH';
+  const isOnsitePayment = order.payment === '現場付款';
   const canPay = LINE_PAY_ENABLED && !order.voided && !isOnsitePayment && ['尚未付款', '付款失敗', '付款處理中'].includes(paymentStatus);
   const cancelled = order.voided || order.rejected;
 
@@ -178,7 +178,7 @@ function OrderDetailCard({
       </div>
 
       <div className={styles.paymentRow}>
-        <span>{isOnsitePayment ? '現場付款' : 'LINE Pay（即將推出）'} <b>{isOnsitePayment && paymentStatus === '尚未付款' ? '到店付款' : paymentStatus}</b></span>
+        <span>{isOnsitePayment ? '現場付款' : 'LINE Pay'} <b>{isOnsitePayment && paymentStatus === '尚未付款' ? '到店付款' : paymentStatus}</b></span>
         {canPay && (
           <button
             className={styles.linePayButton}
