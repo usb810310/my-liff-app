@@ -1464,6 +1464,27 @@
             }
         }
 
+        /* ===== 現代化付款方式卡片 ===== */
+        .pay-options { gap: 12px; margin: 14px 0 6px; }
+        .pay-option { position: relative; overflow: hidden; grid-template-columns: 46px minmax(0, 1fr) 30px; gap: 13px; min-height: 78px; padding: 13px 14px; border: 1.5px solid #e8dfd5; border-radius: 22px; box-shadow: 0 5px 14px rgba(72, 51, 34, .06); transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+        .pay-option::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 4px; background: #d8b180; }
+        .pay-option:hover { transform: translateY(-2px); border-color: #d5b895; box-shadow: 0 10px 22px rgba(72, 51, 34, .11); }
+        .pay-option:focus-visible { outline: 3px solid rgba(223,138,81,.28); outline-offset: 2px; }
+        .pay-option:active { transform: scale(.985); }
+        .pay-option-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 15px; font-weight: 800; line-height: 1; }
+        .pay-option-icon-cash { background: #fff0dc; color: #bc7432; font-size: 21px; box-shadow: inset 0 0 0 1px #f4d8b7; }
+        .pay-option-icon-line { background: #06c755; color: #fff; font-size: 10px; letter-spacing: -.04em; box-shadow: 0 4px 9px rgba(6,199,85,.2); }
+        .pay-option-text { gap: 4px; }
+        .pay-option-text b { font-size: 16px; letter-spacing: -.02em; }
+        .pay-option-text small { font-size: 11px; line-height: 1.35; }
+        .pay-option-arrow { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #f3eee8; color: #9a8877; font-size: 20px; line-height: 1; transition: transform .2s ease, background .2s ease; }
+        .pay-option:hover .pay-option-arrow { transform: translateX(2px); background: #e9dfd4; }
+        .pay-option-linepay { border-color: #bce8c8; background: linear-gradient(110deg, #f6fff8, #fff); }
+        .pay-option-linepay::before { background: #06c755; }
+        .pay-option-linepay .pay-option-arrow { background: #e2f7e8; color: #2e9d50; }
+        .pay-option-linepay:hover { border-color: #65ce83; box-shadow: 0 10px 24px rgba(6,199,85,.13); }
+        @media (max-width: 480px) { .pay-option { min-height: 72px; padding: 11px 12px; grid-template-columns: 42px minmax(0, 1fr) 28px; gap: 11px; } .pay-option-icon { width: 42px; height: 42px; } }
+
         /* ===== 精簡活潑品牌招牌 ===== */
         .brand { padding: 8px 0 10px; }
         .brand-inner { flex-direction: row; justify-content: center; gap: 11px; }
@@ -1697,12 +1718,12 @@
             <div class="modal-sub" id="paySummary">請選擇付款方式</div>
             <div class="pay-options">
                 <button type="button" class="pay-option" data-pay="onsite_cash">
-                    <span class="pay-option-icon">💵</span>
+                    <span class="pay-option-icon pay-option-icon-cash" aria-hidden="true">現</span>
                     <span class="pay-option-text"><b>現場付款</b><small>到店取餐時付款</small></span>
                     <span class="pay-option-arrow">›</span>
                 </button>
                 <button type="button" class="pay-option pay-option-linepay" data-pay="onsite_linepay">
-                    <span class="pay-option-icon">💚</span>
+                    <span class="pay-option-icon pay-option-icon-line" aria-hidden="true">LINE</span>
                     <span class="pay-option-text"><b>LINE Pay</b><small>使用 LINE Pay 完成付款</small></span>
                     <span class="pay-option-arrow">›</span>
                 </button>
