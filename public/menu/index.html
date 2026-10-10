@@ -1463,6 +1463,28 @@
                 font-size: 13px;
             }
         }
+
+        /* ===== 2026 訂餐流程重排 ===== */
+        body { padding-top: 78px; }
+        .control-bar { position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: min(500px, calc(100% - 24px)); margin: 0; border-radius: 0 0 20px 20px; z-index: 9999; }
+        .brand { padding-top: 4px; }
+        .flow-step-label { margin: 18px 0 8px; font-size: 15px; font-weight: 800; color: var(--text-primary); }
+        .order-panel { margin-top: 8px; }
+        .container-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin: 2px 0 16px; }
+        .container-option { min-width: 0; padding: 10px 6px 11px; border: 2px solid var(--border-light); border-radius: 16px; background: var(--bg-card); color: var(--text-primary); cursor: pointer; text-align: center; transition: .2s ease; }
+        .container-option:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .container-option.active { border-color: var(--accent); background: var(--accent-light); box-shadow: 0 5px 14px rgba(176,152,136,.22); }
+        .container-option img { display: block; width: 54px; height: 54px; object-fit: contain; margin: 0 auto 5px; }
+        .container-option-name { display: block; font-weight: 800; font-size: 14px; }
+        .container-option strong { display: inline-block; margin-top: 3px; color: var(--accent); font-size: 15px; }
+        .container-option small { display: block; color: var(--text-secondary); font-size: 11px; }
+        .panel-status { margin-bottom: 10px; }
+        .order-row { display: none; }
+        .summary-section { margin-top: 14px; }
+        .summary-section::before { content: '③ 購物清單'; display: block; margin-bottom: 10px; text-align: left; font-size: 15px; font-weight: 800; }
+        .pickup-immediate { grid-column: 1 / -1; border-color: #6c9b68; background: #e8f2e5; color: #477245; }
+        .pickup-immediate.selected { background: #cfe4c9; border-color: #477245; }
+        @media (max-width: 480px) { body { padding-top: 70px; } .control-bar { width: 100%; border-radius: 0 0 16px 16px; } .container-option img { width: 46px; height: 46px; } .container-option-name { font-size: 13px; } }
     </style>
 </head>
 <body>
@@ -1483,61 +1505,45 @@
             </div>
         </div>
 
-        <!-- ===== 控制欄 (已移出，作為固定導航欄) ===== -->
+        <!-- ===== 控制欄：固定於頁面最上方 ===== -->
         <div class="control-bar">
-            <a href="/" class="control-item">
-                <span class="icon">🏠</span>
-                <span class="label">首頁</span>
-            </a>
+            <a href="/" class="control-item"><span class="icon">🏠</span><span class="label">首頁</span></a>
             <span class="control-divider"></span>
-            <div class="sync-badge" id="syncBadge">
-                <span class="indicator connecting" id="indicatorDot"></span>
-                <span class="sync-label" id="syncText">連線中</span>
-            </div>
-            <button class="wish-btn-inline" id="wishTriggerBtn">
-                <span class="icon">⭐</span>
-                <span class="label">許願池</span>
-            </button>
+            <div class="sync-badge" id="syncBadge"><span class="indicator connecting" id="indicatorDot"></span><span class="sync-label" id="syncText">連線中</span></div>
+            <button class="wish-btn-inline" id="wishTriggerBtn"><span class="icon">⭐</span><span class="label">許願池</span></button>
             <span class="control-divider"></span>
-            <button class="theme-toggle-btn" id="themeToggle">
-                <span class="icon" id="toggleKnob">🌙</span>
-                <span class="label" id="themeLabel">黑主題</span>
-            </button>
-        </div>
-
-        <div class="brand-sub-title" id="todaySectionTitle">🪧今日口味查看 & 同步店內冰櫃🪧</div>
-
-        <!-- ===== ✨開始訂購 & 模擬試用✨口味 ===== -->
-        <div class="today-section" id="todaySection">
-            <div class="section-header">
-                <div class="scroll-indicator"><span class="hint-text"><span class="arrow">→ 左右滑動查看更多口味</span><span class="arrow">→</span></span><div class="track"><div class="fill" id="scrollFill"></div></div></div>
-            </div>
-            <div class="today-scroll-wrapper">
-                <div class="finger-swipe" id="fingerSwipe">⬅️👆➡️</div>
-                <div class="today-scroll" id="todayScroll"><div class="today-scroll-content"><div class="today-grid" id="todayGrid"><div class="loading">⏳ 載入中...</div></div></div></div>
-            </div>
+            <button class="theme-toggle-btn" id="themeToggle"><span class="icon" id="toggleKnob">🌙</span><span class="label" id="themeLabel">黑主題</span></button>
         </div>
 
         <!-- ===== 🆕 重新設計的訂單面板 ===== -->
         <div class="shop-status-bar" id="shopStatusBar"><span class="dot"></span><div><span id="shopStatusLabel">確認營業狀態中…</span><small id="shopStatusDetail"></small></div></div>
         <div class="order-lock-note" id="orderLockNote">今天與明天都不營業，下單區已暫時鎖定；仍可瀏覽今日口味。</div>
-        <div class="brand-sub-title" id="orderSectionTitle">✨開始訂購 &amp; 模擬試用✨</div>
+        <div class="brand-sub-title" id="orderSectionTitle">① 選擇盛裝容器</div>
         <div class="order-panel" id="orderPanel">
             <!-- 第一行：標題 -->
             <div class="panel-header">
-                ⬇️ 切換種類 / 口味選擇 ⬆️
+                先選擇盛裝容器，再進入口味配對
             </div>
 
             <!-- 第二行：模式按鈕 -->
-            <div class="mode-switcher">
-                <button class="mode-btn active" data-mode="duet" id="modeDuet">🥂 雙重奏</button>
-                <button class="mode-btn" data-mode="cup" id="modeCup">🍦 獨享杯</button>
-                <button class="mode-btn" data-mode="share" id="modeShare">🎁 分享盒</button>
+            <div class="container-options" aria-label="選擇盛裝容器">
+                <button class="container-option active" data-mode="duet" id="modeDuet">
+                    <img src="https://omg-gelato79.pages.dev/icon-duet.png" alt="雙重奏商品圖片" />
+                    <span class="container-option-name">雙重奏</span><strong>$120</strong><small>140g ±</small>
+                </button>
+                <button class="container-option" data-mode="cup" id="modeCup">
+                    <img src="https://omg-gelato79.pages.dev/icon-cup.png" alt="獨享杯商品圖片" />
+                    <span class="container-option-name">獨享杯</span><strong>$100</strong><small>100g ±</small>
+                </button>
+                <button class="container-option" data-mode="share" id="modeShare">
+                    <img src="https://omg-gelato79.pages.dev/icon-share.png" alt="分享盒商品圖片" />
+                    <span class="container-option-name">分享盒</span><strong>$420</strong><small>500g ±</small>
+                </button>
             </div>
 
             <!-- 第三行：目前選定 -->
             <div class="panel-status">
-                <span class="status-label">目前選定：</span>
+                <span class="status-label">目前選擇：</span>
                 <span class="status-mode" id="currentModeLabel">雙重奏</span>
                 <span class="pending-badge" id="pendingBadge">⏳ 待配對：<span id="pendingBadgeFlavor"></span></span>
             </div>
@@ -1571,6 +1577,22 @@
             </div>
         </div>
 
+
+        <!-- ===== 第二步：選擇口味 ===== -->
+        <div class="flow-step-label">② 選擇口味窗口</div>
+        <div class="brand-sub-title" id="todaySectionTitle">🪧今日口味查看 & 同步店內冰櫃🪧</div>
+
+        <!-- ===== ✨開始訂購 & 模擬試用✨口味 ===== -->
+        <div class="today-section" id="todaySection">
+            <div class="section-header">
+                <div class="scroll-indicator"><span class="hint-text"><span class="arrow">→ 左右滑動查看更多口味</span><span class="arrow">→</span></span><div class="track"><div class="fill" id="scrollFill"></div></div></div>
+            </div>
+            <div class="today-scroll-wrapper">
+                <div class="finger-swipe" id="fingerSwipe">⬅️👆➡️</div>
+                <div class="today-scroll" id="todayScroll"><div class="today-scroll-content"><div class="today-grid" id="todayGrid"><div class="loading">⏳ 載入中...</div></div></div></div>
+            </div>
+        </div>
+
         <!-- ===== 訂單明細 ===== -->
         <div class="summary-section" id="summarySection">
             <!-- 修改：標題獨立並置中，移除原本的 0 項徽章 -->
@@ -1586,8 +1608,8 @@
             </div>
             
             <div class="summary-actions">
-                <button class="action-btn clear-btn" id="clearAllBtn">清空重選</button>
-                <button class="action-btn primary-btn" id="sendLineBtn">透過LINE傳送訂單</button>
+                <button class="action-btn clear-btn" id="clearAllBtn">清除全部</button>
+                <button class="action-btn primary-btn" id="sendLineBtn">送出訂單</button>
             </div>
         </div>
 
@@ -1655,12 +1677,12 @@
             <div class="pay-options">
                 <button type="button" class="pay-option" data-pay="onsite_cash">
                     <span class="pay-option-icon">💵</span>
-                    <span class="pay-option-text"><b>現場付現金</b><small>到店取餐時以現金付款</small></span>
+                    <span class="pay-option-text"><b>現場付款</b><small>到店取餐時付款</small></span>
                     <span class="pay-option-arrow">›</span>
                 </button>
                 <button type="button" class="pay-option pay-option-linepay" data-pay="onsite_linepay">
                     <span class="pay-option-icon">💚</span>
-                    <span class="pay-option-text"><b>現場 LINE Pay</b><small>到店取餐時以 LINE Pay 掃碼付款</small></span>
+                    <span class="pay-option-text"><b>LINE Pay</b><small>使用 LINE Pay 完成付款</small></span>
                     <span class="pay-option-arrow">›</span>
                 </button>
             </div>
@@ -2034,6 +2056,9 @@
         function buildSlotGrid() {
             const slots = getDaySlots(selectedDate);
             let html = '';
+            if (selectedDate === 'today' && isPickupDayAvailable('today')) {
+                html += `<div class="pickup-slot pickup-immediate ${selectedSlot === 'immediate' ? 'selected' : ''}" data-slot="immediate">⚡ 立即取餐</div>`;
+            }
             slots.forEach(({ slot, disabled }) => {
                 const selected = (selectedSlot === slot);
                 html += `<div class="pickup-slot ${selected?'selected':''} ${disabled?'disabled':''}" data-slot="${slot}">${slot}</div>`;
@@ -2076,7 +2101,9 @@
 
         function updatePickupDisplay() {
             const dateStr = selectedDate === 'today' ? '今天' : '明天';
-            if (selectedSlot !== null) {
+            if (selectedSlot === 'immediate') {
+                pickupSelectedDisplay.innerHTML = '✅ <strong>立即取餐</strong>';
+            } else if (selectedSlot !== null) {
                 pickupSelectedDisplay.innerHTML = `✅ ${dateStr} <strong>${selectedSlot}</strong>`;
                 pickupModalConfirm.disabled = false;
             } else {
@@ -2143,13 +2170,12 @@
         pickupModalConfirm.addEventListener('click', () => {
             if (pickupModalConfirm.disabled || isSubmittingOrder || hasRecentOrderSubmitLock()) return;
             if (selectedSlot === null) {
-                pickupError.textContent = '請選擇時段';
+                pickupError.textContent = '請選擇取餐時間';
                 return;
             }
-            pendingPickup = {
-                abs: `${getPickupDateStr(selectedDate)} ${selectedSlot}`,
-                rel: `${selectedDate === 'tomorrow' ? '明天' : '今天'} ${selectedSlot}`,
-            };
+            pendingPickup = selectedSlot === 'immediate'
+                ? { abs: `${getPickupDateStr('today')} 立即取餐`, rel: '立即取餐' }
+                : { abs: `${getPickupDateStr(selectedDate)} ${selectedSlot}`, rel: `${selectedDate === 'tomorrow' ? '明天' : '今天'} ${selectedSlot}` };
             closePickupModal();
             openPayModal();
         });
@@ -2668,10 +2694,10 @@
                     date: new Date().toISOString().split('T')[0],
                     items: itemsForFirebase,
                     total,
-                    payment: '現場付款',
+                    payment: payMethod === 'onsite_linepay' ? 'LINE Pay' : '現場付款',
                     paymentStatus: 'unpaid',
                     paymentMethod: payMethod === 'onsite_linepay' ? 'ONSITE_LINEPAY' : 'ONSITE_CASH',
-                    paymentNote: payMethod === 'onsite_linepay' ? '現場 LINE Pay' : '現場付現金',
+                    paymentNote: payMethod === 'onsite_linepay' ? 'LINE Pay' : '現場付款',
                     remark: `取餐時間：${pickupRel}（${pickupAbs}）`,
                     source: window.liffUserId ? 'LIFF' : 'WEB_GUEST',
                     voided: false,
