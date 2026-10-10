@@ -402,6 +402,18 @@ export default function Home() {
     }
   });
 
+  const handleTabDeepLink = useEffectEvent(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('orderNo')) return;
+    const tab = params.get('tab');
+    if (tab === 'orders' || tab === 'member') switchTab(tab);
+  });
+
+  useEffect(() => {
+    if (!profile?.userId) return;
+    handleTabDeepLink();
+  }, [profile?.userId]);
+
   useEffect(() => {
     if (!profile?.userId || !orders.length) return;
     const params = new URLSearchParams(window.location.search);
