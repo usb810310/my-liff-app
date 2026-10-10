@@ -1,14 +1,29 @@
 import { NextResponse } from 'next/server';
 import { getLiffReturnUrl } from '@/lib/linepay';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://omg-gelato79.pages.dev',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
+const allowedOrigins = new Set([
+  'https://my-liff-app-xi.vercel.app',
+  'https://omg-gelato79.pages.dev',
+]);
 
-export function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: corsHeaders });
+function getCorsHeaders(request: Request) {
+  const origin = request.headers.get('origin');
+  const headers = new Headers({
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Vary': 'Origin',
+  });
+  if (origin && allowedOrigins.has(origin)) {
+    headers.set('Access-Control-Allow-Origin', origin);
+  }
+  return headers;
+}
+
+export function OPTIONS(request: Request) {
+  const headers = getCorsHeaders(request);
+  const origin = request.headers.get('origin');
+  const status = origin && !allowedOrigins.has(origin) ? 403 : 204;
+  return new NextResponse(null, { status, headers });
 }
 
 type IncomingItem = {
@@ -26,6 +41,14 @@ function buildPickupLabel(pickupDay?: string, pickupTime?: string) {
 }
 
 export async function POST(request: Request) {
+  const corsHeaders = getCorsHeaders(request);
+  const origin = request.headers.get('origin');
+  if (origin && !allowedOrigins.has(origin)) {
+    return NextResponse.json(
+      { success: false, error: '不允許的網站來源' },
+      { status: 403, headers: corsHeaders },
+    );
+  }
   try {
     const body = await request.json();
     const {
