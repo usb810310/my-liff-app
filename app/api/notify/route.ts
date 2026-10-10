@@ -86,11 +86,12 @@ export async function POST(request: Request) {
     }
 
     const totalValue = total != null ? Number(total) : 0;
-    const titleText = pickupLabel ? `下單成功~取餐時間: ${pickupLabel} ` : '您已送出訂單';
+    const paymentLabel = payMethod === 'onsite_linepay' ? 'LINE Pay' : '現場付款';
+    const titleText = '✅ 訂單已成立';
 
     const customerCard = {
       type: 'flex',
-      altText: `您已送出訂單，取餐號碼 ${customerPickupNumber}`,
+      altText: `訂單已成立，取餐號碼 ${customerPickupNumber}`,
       contents: {
         type: 'bubble',
         size: 'mega',
@@ -101,8 +102,11 @@ export async function POST(request: Request) {
           spacing: 'none',
           contents: [
             { type: 'text', text: titleText, size: 'lg', weight: 'bold', color: '#111111', wrap: true },
+            { type: 'text', text: '狀態：已成立・等待店家接單', size: 'sm', weight: 'bold', color: '#2F8A4B', wrap: true, margin: 'sm' },
             { type: 'text', text: `線上訂單編號：${orderNo || '—'}`, size: 'xs', color: '#555555', wrap: true, margin: 'sm' },
             { type: 'text', text: `取餐號碼：${customerPickupNumber}`, size: 'xl', weight: 'bold', style: 'italic', color: '#2F5BEA', margin: 'md' },
+            ...(pickupLabel ? [{ type: 'text', text: `取餐時間：${pickupLabel}`, size: 'sm', color: '#333333', wrap: true, margin: 'sm' }] : []),
+            { type: 'text', text: `付款方式：${paymentLabel}`, size: 'sm', color: '#333333', wrap: true, margin: 'xs' },
             { type: 'separator', margin: 'lg', color: '#111111' },
             ...itemRows,
             { type: 'separator', margin: 'lg', color: '#111111' },
