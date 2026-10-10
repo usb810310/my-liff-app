@@ -1485,6 +1485,19 @@
         .pay-option-linepay:hover { border-color: #65ce83; box-shadow: 0 10px 24px rgba(6,199,85,.13); }
         @media (max-width: 480px) { .pay-option { min-height: 72px; padding: 11px 12px; grid-template-columns: 42px minmax(0, 1fr) 28px; gap: 11px; } .pay-option-icon { width: 42px; height: 42px; } }
 
+        /* ===== 分享盒重複選取與送單確認 ===== */
+        .modal-picked-list { display: flex; flex-wrap: wrap; gap: 7px; min-height: 0; margin: 4px 0 8px; }
+        .modal-picked-chip { border: 1px solid #dfcdbb; border-radius: 999px; padding: 5px 9px 5px 11px; background: #fff8ef; color: #8f653f; font: inherit; font-size: 12px; cursor: pointer; }
+        .modal-picked-chip span { margin-left: 4px; color: #b88960; font-weight: 800; }
+        .modal-picked-chip:hover { background: #f6eadb; }
+        .order-confirm-box { text-align: center; }
+        .order-confirm-icon { display: grid; place-items: center; width: 42px; height: 42px; margin: -4px auto 10px; border-radius: 14px; background: #fff2df; color: #d08b4c; font-size: 22px; }
+        .order-confirm-box .modal-sub { text-align: center; }
+        .order-confirm-detail { display: grid; grid-template-columns: 1fr auto; gap: 8px 14px; margin: 4px 0 14px; padding: 13px 15px; border-radius: 15px; background: #faf5ed; color: var(--text-secondary); font-size: 12px; text-align: left; }
+        .order-confirm-detail strong { color: var(--text-primary); font-size: 13px; text-align: right; }
+        .order-confirm-actions { justify-content: stretch; }
+        .order-confirm-actions button { flex: 1; }
+
         /* ===== 一致的流程步驟標題 ===== */
         .flow-step-label { display: flex; align-items: center; gap: 8px; margin: 15px 2px 8px; color: var(--text-primary); font-size: 15px; font-weight: 800; letter-spacing: -.02em; }
         .flow-step-label .flow-step-number { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid #dbcbb9; border-radius: 10px; color: #a87342; background: #fffaf3; font-size: 10px; letter-spacing: .08em; }
@@ -1734,6 +1747,7 @@
                 <span class="count-badge" id="modalSelectedCount">已選 0 種</span>
             </div>
             <div class="modal-chip-list" id="modalChipList"></div>
+            <div class="modal-picked-list" id="modalPickedList" aria-live="polite"></div>
             <div class="modal-error" id="modalError"></div>
             <div class="modal-actions">
                 <button class="btn-cancel" id="modalCancelBtn">取消</button>
@@ -1794,6 +1808,21 @@
             <div class="modal-error" id="payError"></div>
             <div class="modal-actions">
                 <button class="btn-cancel" id="payModalBack">返回選時間</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 送出訂單確認 Modal ===== -->
+    <div class="modal-overlay" id="orderConfirmModal">
+        <div class="modal-box order-confirm-box">
+            <div class="order-confirm-icon">✦</div>
+            <div class="modal-header"><h3>確認送出訂單？</h3><button class="modal-close" id="orderConfirmClose">✕</button></div>
+            <div class="modal-sub">訂單確認後將傳送給店家，請確認以下資訊無誤。</div>
+            <div class="order-confirm-detail" id="orderConfirmDetail"></div>
+            <div class="modal-error" id="orderConfirmError"></div>
+            <div class="modal-actions order-confirm-actions">
+                <button class="btn-cancel" id="orderConfirmCancel">返回修改</button>
+                <button class="btn-confirm" id="orderConfirmSubmit">確認送出</button>
             </div>
         </div>
     </div>
@@ -1900,6 +1929,7 @@
         // 分享盒
         const shareModal = document.getElementById('shareModal');
         const modalChipList = document.getElementById('modalChipList');
+        const modalPickedList = document.getElementById('modalPickedList');
         const modalSelectedCount = document.getElementById('modalSelectedCount');
         const modalError = document.getElementById('modalError');
         const modalConfirmBtn = document.getElementById('modalConfirmBtn');
@@ -2102,19 +2132,12 @@
             modalChipList.querySelectorAll('.modal-chip').forEach(el => {
                 el.addEventListener('click', () => {
                     const name = el.dataset.flavor;
-                    const idx = modalSelectedFlavors.indexOf(name);
-                    if (idx > -1) {
-                        modalSelectedFlavors.splice(idx, 1);
-                        el.classList.remove('selected');
-                    } else {
-                        if (modalSelectedFlavors.length >= 3) {
-                            modalError.textContent = '⚠️ 最多只能選 3 種口味！';
-                            return;
-                        }
-                        modalSelectedFlavors.push(name);
-                        el.classList.add('selected');
-                        modalError.textContent = '';
+                    if (modalSelectedFlavors.length >= 3) {
+                        modalError.textContent = '⚠️ 已選滿 3 次，可點下方口味移除後再換。';
+                        return;
                     }
+                    modalSelectedFlavors.push(name);
+                    modalError.textContent = '';
                     updateModalUI();
                 });
             });
@@ -2122,7 +2145,16 @@
 
         function updateModalUI() {
             const count = modalSelectedFlavors.length;
-            modalSelectedCount.textContent = `已選 ${count} 種`;
+            modalSelectedCount.textContent = `已選 ${count} 次`;
+            if (modalPickedList) {
+                modalPickedList.innerHTML = modalSelectedFlavors.map((name, index) => `<button type="button" class="modal-picked-chip" data-index="${index}">${escapeHtml(name)} <span>×</span></button>`).join('');
+                modalPickedList.querySelectorAll('.modal-picked-chip').forEach((chip) => {
+                    chip.addEventListener('click', () => {
+                        modalSelectedFlavors.splice(Number(chip.dataset.index), 1);
+                        updateModalUI();
+                    });
+                });
+            }
             const valid = count === 3;
             modalConfirmBtn.disabled = !valid;
             if (count > 0 && count < 3) modalError.textContent = '⚠️ 請選滿 3 種口味';
@@ -2148,6 +2180,7 @@
             shareBoxes.push({ flavors: [...modalSelectedFlavors] });
             showToast(`✅ 已加入分享盒 (${modalSelectedFlavors.join(' + ')})`, '🎁');
             closeShareModal();
+            clearTasteFocus();
             updateOrderDisplay();
         }
 
@@ -2284,16 +2317,54 @@
             openPayModal();
         });
 
+        const orderConfirmModal = document.getElementById('orderConfirmModal');
+        const orderConfirmDetail = document.getElementById('orderConfirmDetail');
+        const orderConfirmError = document.getElementById('orderConfirmError');
+        const orderConfirmSubmit = document.getElementById('orderConfirmSubmit');
+        const orderConfirmCancel = document.getElementById('orderConfirmCancel');
+        const orderConfirmClose = document.getElementById('orderConfirmClose');
+        let pendingPayMethod = null;
+
+        function paymentLabel(method) {
+            return method === 'onsite_linepay' ? 'LINE Pay' : '現場付款';
+        }
+
+        function openOrderConfirm(method) {
+            pendingPayMethod = method;
+            orderConfirmDetail.innerHTML = `<span>取餐時間</span><strong>${escapeHtml(pendingPickup?.rel || '尚未選擇')}</strong><span>付款方式</span><strong>${paymentLabel(method)}</strong>`;
+            orderConfirmError.textContent = '';
+            orderConfirmModal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeOrderConfirm() {
+            orderConfirmModal.classList.remove('open');
+            document.body.style.overflow = '';
+            orderConfirmError.textContent = '';
+        }
+
         payModal.querySelectorAll('[data-pay]').forEach(button => {
-            button.addEventListener('click', async () => {
+            button.addEventListener('click', () => {
                 if (isSubmittingOrder || hasRecentOrderSubmitLock() || !pendingPickup) return;
                 if (!shopIsOpen) { showToast('今天與明天都不營業，暫停線上點餐', '🔒'); return; }
-                createOrderSubmitLock();
-                setOrderSubmitting(true);
                 closePayModal();
-                await sendOrderToLine(pendingPickup.abs, pendingPickup.rel, button.dataset.pay);
+                openOrderConfirm(button.dataset.pay);
             });
         });
+
+        orderConfirmSubmit.addEventListener('click', async () => {
+            if (isSubmittingOrder || hasRecentOrderSubmitLock() || !pendingPickup || !pendingPayMethod) return;
+            if (!shopIsOpen) { orderConfirmError.textContent = '目前暫停線上點餐，請稍後再試。'; return; }
+            createOrderSubmitLock();
+            setOrderSubmitting(true);
+            const method = pendingPayMethod;
+            closeOrderConfirm();
+            await sendOrderToLine(pendingPickup.abs, pendingPickup.rel, method);
+            pendingPayMethod = null;
+        });
+        orderConfirmCancel.addEventListener('click', () => { closeOrderConfirm(); openPayModal(); });
+        orderConfirmClose.addEventListener('click', () => { closeOrderConfirm(); openPayModal(); });
+        orderConfirmModal.addEventListener('click', (e) => { if (e.target === orderConfirmModal) { closeOrderConfirm(); openPayModal(); } });
         document.getElementById('payModalClose').addEventListener('click', closePayModal);
         document.getElementById('payModalBack').addEventListener('click', () => { closePayModal(); openPickupModal(); });
         payModal.addEventListener('click', (e) => { if (e.target === payModal) closePayModal(); });
@@ -2518,7 +2589,12 @@
             }
         }
 
+        function clearTasteFocus() {
+            document.querySelectorAll('#todayGrid .today-card').forEach((item) => item.classList.remove('taste-focus'));
+        }
+
         function setActiveMode(mode) {
+            clearTasteFocus();
             if (mode === 'share') {
                 if (activeTarget !== 'share') {
                     pendingDuetFlavor = null;
@@ -2554,6 +2630,7 @@
                 duetPairs.push([pendingDuetFlavor, flavor]);
                 showToast(`配對成功！${pendingDuetFlavor} + ${flavor}`, '✅');
                 pendingDuetFlavor = null;
+                clearTasteFocus();
                 updateOrderDisplay();
             } else {
                 pendingDuetFlavor = flavor;
@@ -2565,6 +2642,7 @@
         function appendCupFlavor(flavor) {
             cupMap[flavor] = (cupMap[flavor] || 0) + 1;
             showToast(`已加入 ${flavor} (${cupMap[flavor]}杯)`, '🍦');
+            clearTasteFocus();
             updateOrderDisplay();
         }
 
