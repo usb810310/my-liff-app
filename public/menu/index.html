@@ -1485,6 +1485,15 @@
         .pay-option-linepay:hover { border-color: #65ce83; box-shadow: 0 10px 24px rgba(6,199,85,.13); }
         @media (max-width: 480px) { .pay-option { min-height: 72px; padding: 11px 12px; grid-template-columns: 42px minmax(0, 1fr) 28px; gap: 11px; } .pay-option-icon { width: 42px; height: 42px; } }
 
+        /* ===== 一致的流程步驟標題 ===== */
+        .flow-step-label { display: flex; align-items: center; gap: 8px; margin: 15px 2px 8px; color: var(--text-primary); font-size: 15px; font-weight: 800; letter-spacing: -.02em; }
+        .flow-step-label .flow-step-number { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid #dbcbb9; border-radius: 10px; color: #a87342; background: #fffaf3; font-size: 10px; letter-spacing: .08em; }
+        .flow-step-label small { margin-left: auto; color: var(--text-muted); font-size: 8px; font-weight: 700; letter-spacing: .12em; }
+        .summary-section { margin-top: 0; }
+        .today-card:hover:not(.sold-out)::after, .today-card.taste-focus::after { content: '＋'; background: #f5eee6; color: var(--accent); }
+        .modal-chip.selected .chip-check { display: none; }
+        @media (max-width: 480px) { .flow-step-label { margin-top: 12px; font-size: 14px; } .flow-step-label small { font-size: 7px; } }
+
         /* ===== 最終介面收斂與點擊體驗 ===== */
         .floating-toast { top: 78px; z-index: 10001; max-width: calc(100% - 32px); overflow: hidden; text-overflow: ellipsis; }
         .shop-status-bar { display: flex; align-items: center; gap: 8px; margin: 4px 0 10px; padding: 8px 3px 9px; border: 0; border-bottom: 1px solid #e8e3da; border-radius: 0; background: transparent; color: #66745f; box-shadow: none; font-size: 12px; }
@@ -1518,7 +1527,7 @@
         .today-card { position: relative; overflow: hidden; border-radius: 18px; transition: transform .24s cubic-bezier(.2,.8,.2,1), box-shadow .24s ease, border-color .24s ease; }
         .today-card::after { content: '＋'; position: absolute; right: 9px; bottom: 7px; display: grid; place-items: center; width: 21px; height: 21px; border-radius: 50%; background: #f5eee6; color: var(--accent); font-size: 15px; opacity: .72; transition: transform .22s ease, background .22s ease, color .22s ease; }
         .today-card:hover:not(.sold-out), .today-card.taste-focus { transform: translateY(-4px) rotate(-1deg); border-color: var(--accent); box-shadow: 0 10px 18px rgba(113, 83, 55, .15); }
-        .today-card:hover:not(.sold-out)::after, .today-card.taste-focus::after { content: '✓'; background: var(--accent); color: #fff; transform: scale(1.08) rotate(8deg); }
+        .today-card:hover:not(.sold-out)::after, .today-card.taste-focus::after { content: '＋'; background: #f5eee6; color: var(--accent); transform: scale(1); }
         .today-card.taste-focus { animation: tastePop .38s ease-out; }
         @keyframes tastePop { 0% { transform: scale(.96); } 65% { transform: scale(1.035) rotate(-1deg); } 100% { transform: scale(1) rotate(-1deg); } }
         .summary-section { position: relative; overflow: hidden; border: 1px solid #eadfd3; background: linear-gradient(145deg, #fffdf9, #f7f2ea); box-shadow: 0 12px 26px rgba(75,54,35,.08); }
@@ -1574,7 +1583,7 @@
         .panel-status { margin-bottom: 10px; }
         .order-row { display: none; }
         .summary-section { margin-top: 14px; }
-        .summary-section::before { content: '③ 購物清單'; display: block; margin-bottom: 10px; text-align: left; font-size: 15px; font-weight: 800; }
+        .summary-section::before { display: none; }
         .pickup-immediate { grid-column: 1 / -1; border-color: #6c9b68; background: #e8f2e5; color: #477245; }
         .pickup-immediate.selected { background: #cfe4c9; border-color: #477245; }
         @media (max-width: 480px) { body { padding-top: 70px; } .control-bar { width: 100%; border-radius: 0 0 16px 16px; } .container-option img { width: 46px; height: 46px; } .container-option-name { font-size: 13px; } }
@@ -1612,7 +1621,7 @@
         <!-- ===== 🆕 重新設計的訂單面板 ===== -->
         <div class="shop-status-bar" id="shopStatusBar"><span class="dot"></span><div><span id="shopStatusLabel">確認營業狀態中…</span><small id="shopStatusDetail"></small></div></div>
         <div class="order-lock-note" id="orderLockNote">今天與明天都不營業，下單區已暫時鎖定；仍可瀏覽今日口味。</div>
-        <div class="brand-sub-title" id="orderSectionTitle">① 選擇盛裝容器</div>
+        <div class="flow-step-label"><span class="flow-step-number">01</span><span>選擇盛裝容器</span><small>CHOOSE YOUR SERVE</small></div>
         <div class="order-panel" id="orderPanel">
             <!-- 第一行：標題 -->
             <div class="panel-header">
@@ -1621,13 +1630,13 @@
 
             <!-- 第二行：模式按鈕 -->
             <div class="container-options" aria-label="選擇盛裝容器">
-                <button class="container-option" data-mode="duet" id="modeDuet">
-                    <img src="https://omg-gelato79.pages.dev/icon-duet.png" alt="雙重奏商品圖片" />
-                    <span class="container-option-name">雙重奏</span><strong>$120</strong><small>140g ±</small>
-                </button>
                 <button class="container-option" data-mode="cup" id="modeCup">
                     <img src="https://omg-gelato79.pages.dev/icon-cup.png" alt="獨享杯商品圖片" />
                     <span class="container-option-name">獨享杯</span><strong>$100</strong><small>100g ±</small>
+                </button>
+                <button class="container-option" data-mode="duet" id="modeDuet">
+                    <img src="https://omg-gelato79.pages.dev/icon-duet.png" alt="雙重奏商品圖片" />
+                    <span class="container-option-name">雙重奏</span><strong>$120</strong><small>140g ±</small>
                 </button>
                 <button class="container-option" data-mode="share" id="modeShare">
                     <img src="https://omg-gelato79.pages.dev/icon-share.png" alt="分享盒商品圖片" />
@@ -1673,13 +1682,13 @@
 
 
         <!-- ===== 第二步：選擇口味 ===== -->
-        <div class="flow-step-label">② 選擇口味窗口</div>
+        <div class="flow-step-label"><span class="flow-step-number">02</span><span>選擇口味窗口</span><small>BUILD YOUR FLAVOR</small></div>
         <div class="brand-sub-title" id="todaySectionTitle">🪧今日口味查看 & 同步店內冰櫃🪧</div>
 
         <!-- ===== ✨開始訂購 & 模擬試用✨口味 ===== -->
         <div class="today-section" id="todaySection">
             <div class="section-header">
-                <div class="flavor-window-heading"><strong>今日口味</strong><small>點一下卡片，完成你的配對</small></div>
+                <div class="flavor-window-heading"><strong>今日口味</strong><small>可重複點選同一口味</small></div>
                 <div class="scroll-indicator"><span class="hint-text"><span class="arrow">→ 左右滑動查看更多口味</span><span class="arrow">→</span></span><div class="track"><div class="fill" id="scrollFill"></div></div></div>
             </div>
             <div class="today-scroll-wrapper">
@@ -1689,6 +1698,7 @@
         </div>
 
         <!-- ===== 訂單明細 ===== -->
+        <div class="flow-step-label"><span class="flow-step-number">03</span><span>購物清單</span><small>CHECK YOUR ORDER</small></div>
         <div class="summary-section" id="summarySection">
             <!-- 修改：標題獨立並置中，移除原本的 0 項徽章 -->
             
@@ -1720,7 +1730,7 @@
                 <button class="modal-close" id="modalCloseBtn">✕</button>
             </div>
             <div class="modal-sub">
-                📌 請選擇 <strong>2～3 種</strong> 口味
+                📌 請選擇 <strong>3 種</strong> 口味
                 <span class="count-badge" id="modalSelectedCount">已選 0 種</span>
             </div>
             <div class="modal-chip-list" id="modalChipList"></div>
@@ -2085,7 +2095,6 @@
                     <div class="modal-chip" data-flavor="${escapeHtml(name)}">
                         <span class="chip-dot" style="background:${color};"></span>
                         <span class="chip-label">${escapeHtml(name)}</span>
-                        <span class="chip-check">✓</span>
                     </div>
                 `;
             }).join('');
@@ -2114,10 +2123,10 @@
         function updateModalUI() {
             const count = modalSelectedFlavors.length;
             modalSelectedCount.textContent = `已選 ${count} 種`;
-            const valid = count >= 2 && count <= 3;
+            const valid = count === 3;
             modalConfirmBtn.disabled = !valid;
-            if (count > 0 && count < 2) modalError.textContent = '⚠️ 請至少選擇 2 種口味';
-            else if (count >= 2 && count <= 3) modalError.textContent = '';
+            if (count > 0 && count < 3) modalError.textContent = '⚠️ 請選滿 3 種口味';
+            else if (count === 3) modalError.textContent = '';
             else if (count > 3) modalError.textContent = '⚠️ 最多只能選 3 種口味！';
             else modalError.textContent = '';
 
@@ -2132,8 +2141,8 @@
 
         function confirmShareModal() {
             const count = modalSelectedFlavors.length;
-            if (count < 2 || count > 3) {
-                modalError.textContent = count < 2 ? '⚠️ 請至少選擇 2 種口味' : '⚠️ 最多只能選 3 種口味！';
+            if (count !== 3) {
+                modalError.textContent = count < 3 ? '⚠️ 請選滿 3 種口味' : '⚠️ 最多只能選 3 種口味！';
                 return;
             }
             shareBoxes.push({ flavors: [...modalSelectedFlavors] });
