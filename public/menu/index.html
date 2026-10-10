@@ -1485,6 +1485,34 @@
         .pay-option-linepay:hover { border-color: #65ce83; box-shadow: 0 10px 24px rgba(6,199,85,.13); }
         @media (max-width: 480px) { .pay-option { min-height: 72px; padding: 11px 12px; grid-template-columns: 42px minmax(0, 1fr) 28px; gap: 11px; } .pay-option-icon { width: 42px; height: 42px; } }
 
+        /* ===== 口味窗口與購物清單互動升級 ===== */
+        .flavor-window-heading { display: flex; align-items: baseline; justify-content: space-between; width: 100%; margin-bottom: 10px; }
+        .flavor-window-heading strong { color: var(--text-primary); font-size: 16px; letter-spacing: -.02em; }
+        .flavor-window-heading small { color: var(--text-muted); font-size: 10px; }
+        .today-section { position: relative; overflow: hidden; border: 1px solid transparent; background: linear-gradient(var(--bg-card), var(--bg-card)) padding-box, linear-gradient(135deg, #e8d8c5, #c9dbc5, #efd1c6) border-box; box-shadow: 0 10px 26px rgba(75, 54, 35, .08); }
+        .today-section::after { content: '✦'; position: absolute; top: -26px; right: 12px; color: rgba(223,138,81,.12); font-size: 94px; pointer-events: none; transform: rotate(14deg); }
+        .today-card { position: relative; overflow: hidden; border-radius: 18px; transition: transform .24s cubic-bezier(.2,.8,.2,1), box-shadow .24s ease, border-color .24s ease; }
+        .today-card::after { content: '＋'; position: absolute; right: 9px; bottom: 7px; display: grid; place-items: center; width: 21px; height: 21px; border-radius: 50%; background: #f5eee6; color: var(--accent); font-size: 15px; opacity: .72; transition: transform .22s ease, background .22s ease, color .22s ease; }
+        .today-card:hover:not(.sold-out), .today-card.taste-focus { transform: translateY(-4px) rotate(-1deg); border-color: var(--accent); box-shadow: 0 10px 18px rgba(113, 83, 55, .15); }
+        .today-card:hover:not(.sold-out)::after, .today-card.taste-focus::after { content: '✓'; background: var(--accent); color: #fff; transform: scale(1.08) rotate(8deg); }
+        .today-card.taste-focus { animation: tastePop .38s ease-out; }
+        @keyframes tastePop { 0% { transform: scale(.96); } 65% { transform: scale(1.035) rotate(-1deg); } 100% { transform: scale(1) rotate(-1deg); } }
+        .summary-section { position: relative; overflow: hidden; border: 1px solid #eadfd3; background: linear-gradient(145deg, #fffdf9, #f7f2ea); box-shadow: 0 12px 26px rgba(75,54,35,.08); }
+        .summary-section::after { content: '🛒'; position: absolute; top: 11px; right: 14px; font-size: 22px; opacity: .48; transform: rotate(-8deg); }
+        .summary-section::before { position: relative; z-index: 1; color: var(--text-primary); }
+        .summary-list { position: relative; z-index: 1; }
+        .summary-item { border-radius: 12px; border-bottom: 1px dashed #e6dbcc; transition: background .2s ease, transform .2s ease; animation: cartSlideIn .38s cubic-bezier(.2,.8,.2,1) both; }
+        .summary-item:hover { background: rgba(255,255,255,.76); transform: translateX(3px); }
+        .summary-item:nth-child(2) { animation-delay: .05s; }
+        .summary-item:nth-child(3) { animation-delay: .1s; }
+        .summary-total { position: relative; z-index: 1; border-top-color: #d19a68; }
+        .summary-actions { position: relative; z-index: 1; }
+        .summary-actions .action-btn { transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
+        .summary-actions .action-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 13px rgba(75,54,35,.1); }
+        .summary-actions .primary-btn { background: linear-gradient(135deg, #08c85a, #06a94a); }
+        @keyframes cartSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @media (prefers-reduced-motion: reduce) { .today-card, .summary-item, .summary-actions .action-btn { animation: none; transition: none; } }
+
         /* ===== 精簡活潑品牌招牌 ===== */
         .brand { padding: 8px 0 10px; }
         .brand-inner { flex-direction: row; justify-content: center; gap: 11px; }
@@ -1569,7 +1597,7 @@
 
             <!-- 第二行：模式按鈕 -->
             <div class="container-options" aria-label="選擇盛裝容器">
-                <button class="container-option active" data-mode="duet" id="modeDuet">
+                <button class="container-option" data-mode="duet" id="modeDuet">
                     <img src="https://omg-gelato79.pages.dev/icon-duet.png" alt="雙重奏商品圖片" />
                     <span class="container-option-name">雙重奏</span><strong>$120</strong><small>140g ±</small>
                 </button>
@@ -1586,7 +1614,7 @@
             <!-- 第三行：目前選定 -->
             <div class="panel-status">
                 <span class="status-label">目前選擇：</span>
-                <span class="status-mode" id="currentModeLabel">雙重奏</span>
+                <span class="status-mode" id="currentModeLabel">尚未選擇</span>
                 <span class="pending-badge" id="pendingBadge">⏳ 待配對：<span id="pendingBadgeFlavor"></span></span>
             </div>
 
@@ -1627,6 +1655,7 @@
         <!-- ===== ✨開始訂購 & 模擬試用✨口味 ===== -->
         <div class="today-section" id="todaySection">
             <div class="section-header">
+                <div class="flavor-window-heading"><strong>今日口味</strong><small>點一下卡片，完成你的配對</small></div>
                 <div class="scroll-indicator"><span class="hint-text"><span class="arrow">→ 左右滑動查看更多口味</span><span class="arrow">→</span></span><div class="track"><div class="fill" id="scrollFill"></div></div></div>
             </div>
             <div class="today-scroll-wrapper">
@@ -1640,7 +1669,7 @@
             <!-- 修改：標題獨立並置中，移除原本的 0 項徽章 -->
             
             <div class="summary-list" id="summaryList">
-                <div class="summary-empty"> 已選商品清單列表 </div>
+                <div class="summary-empty">選好容器與口味後，商品會滑入這裡</div>
             </div>
             
             <!-- 修改：將 0 項融合進總計區塊 -->
@@ -1703,7 +1732,7 @@
 
             <div class="modal-actions">
                 <button class="btn-cancel" id="pickupModalCancel">取消</button>
-                <button class="btn-confirm" id="pickupModalConfirm" disabled>確認取餐</button>
+                <button class="btn-confirm" id="pickupModalConfirm" disabled>選擇付款方式</button>
             </div>
         </div>
     </div>
@@ -1941,7 +1970,7 @@
             }
             if (pickupModalConfirm) {
                 pickupModalConfirm.disabled = submitting || selectedSlot === null;
-                pickupModalConfirm.textContent = submitting ? '送出中…' : '確認取餐';
+                pickupModalConfirm.textContent = submitting ? '送出中…' : '選擇付款方式';
             }
         }
 
@@ -1962,7 +1991,7 @@
         let duetPairs = [],
             cupMap = {},
             pendingDuetFlavor = null,
-            activeTarget = 'duet';
+            activeTarget = null;
 
         // ---- 工具 ----
         function showToast(msg, icon = '🍨') {
@@ -2438,7 +2467,7 @@
         // ---- 訂單核心 ----
         function updateModeLabel(mode) {
             const labelMap = { duet: '雙重奏', cup: '獨享杯', share: '分享盒' };
-            const text = labelMap[mode] || '雙重奏';
+            const text = labelMap[mode] || '尚未選擇';
             if (currentModeLabel) currentModeLabel.textContent = text;
 
             modeDuet.classList.toggle('active', mode === 'duet');
@@ -2477,7 +2506,11 @@
         }
 
         function handleFlavorClick(flavor, sold) {
+            const card = document.querySelector(`#todayGrid .today-card[data-flavor=\"${CSS.escape(flavor)}\"]`);
             if (sold) { showToast('已售完', '❌'); return; }
+            if (!activeTarget) { showToast('請先選擇上方的盛裝容器', '👆'); return; }
+            document.querySelectorAll('#todayGrid .today-card').forEach((item) => item.classList.remove('taste-focus'));
+            card?.classList.add('taste-focus');
             if (activeTarget === 'duet') appendDuetFlavor(flavor);
             else if (activeTarget === 'cup') appendCupFlavor(flavor);
             else if (activeTarget === 'share') openShareModal();
@@ -3032,7 +3065,7 @@
         // ---- 初始化 ----
         setSyncStatus('connecting', '連線中');
         updateOrderDisplay();
-        updateModeLabel('duet');
+        updateModeLabel(null);
         setTimeout(checkScrollable, 600);
         loadSiteConfig();
         updateScrollIndicator();
